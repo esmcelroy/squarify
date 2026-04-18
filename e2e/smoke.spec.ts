@@ -14,6 +14,6 @@ test('upload zone is visible', async ({ page }) => {
 test('padding settings panel is visible', async ({ page }) => {
   await page.goto('/')
   await expect(page.getByText('Padding Settings')).toBeVisible()
-  await expect(page.getByText('Solid Color')).toBeVisible()
-  await expect(page.getByText('Background Image')).toBeVisible()
+  await expect(page.getByText('Gradient')).toBeVisible()
+  await expect(page.getByText('Blur')).toBeVisible()
 })

@@ -8,25 +8,25 @@ test.beforeEach(async ({ page }) => {
   await page.reload()
 })
 
-test('can switch between Solid Color and Background Image fill types', async ({
+test('can switch between Color and Image fill types', async ({
   page,
 }) => {
-  const solidBtn = page.getByRole('button', { name: 'Solid Color' })
-  const bgImgBtn = page.getByRole('button', { name: 'Background Image' })
+  const colorBtn = page.getByRole('button', { name: 'Color', exact: true })
+  const imgBtn = page.getByRole('button', { name: 'Image', exact: true })
 
-  // Solid Color is default (active)
-  await expect(solidBtn).toBeVisible()
-  await expect(bgImgBtn).toBeVisible()
+  // Color is default (active)
+  await expect(colorBtn).toBeVisible()
+  await expect(imgBtn).toBeVisible()
 
-  // Switch to Background Image
-  await bgImgBtn.click()
+  // Switch to Image
+  await imgBtn.click()
   // "Upload image" button should appear (background image UI)
   await expect(
     page.getByRole('button', { name: 'Upload image' }),
   ).toBeVisible()
 
-  // Switch back to Solid Color
-  await solidBtn.click()
+  // Switch back to Color
+  await colorBtn.click()
   // Color hex input should appear
   await expect(page.locator('input[placeholder="#ffffff"]')).toBeVisible()
 })
@@ -40,11 +40,11 @@ test('can change the fill color using the hex input', async ({ page }) => {
   await expect(hexInput).toHaveValue('#ff0000')
 })
 
-test('style buttons appear when Background Image is selected', async ({
+test('style buttons appear when Image fill is selected', async ({
   page,
 }) => {
-  // Switch to Background Image
-  await page.getByRole('button', { name: 'Background Image' }).click()
+  // Switch to Image fill
+  await page.getByRole('button', { name: 'Image', exact: true }).click()
 
   // Style buttons should be visible
   await expect(page.getByRole('button', { name: 'cover' })).toBeVisible()

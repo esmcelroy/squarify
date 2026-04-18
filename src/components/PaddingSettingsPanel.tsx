@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
-import type { PaddingSettings } from '../types';
+import type { PaddingSettings, PaddingFillType, GradientDirection, OutputFormat } from '../types';
 import { ASPECT_RATIO_PRESETS } from '../types';
-import { Palette, Image as ImageIcon, Wand2 } from 'lucide-react';
+import { Palette, Image as ImageIcon, Wand2, Blend, Sparkles } from 'lucide-react';
 
 interface PaddingSettingsPanelProps {
   settings: PaddingSettings;
@@ -10,6 +10,13 @@ interface PaddingSettingsPanelProps {
   isProcessing: boolean;
   hasPhotos: boolean;
 }
+
+const FILL_TYPES: { value: PaddingFillType; label: string; icon: typeof Palette }[] = [
+  { value: 'color', label: 'Color', icon: Palette },
+  { value: 'image', label: 'Image', icon: ImageIcon },
+  { value: 'gradient', label: 'Gradient', icon: Blend },
+  { value: 'blur', label: 'Blur', icon: Sparkles },
+];
 
 export function PaddingSettingsPanel({ settings, onChange, onProcess, isProcessing, hasPhotos }: PaddingSettingsPanelProps) {
   const bgImageInputRef = useRef<HTMLInputElement>(null);
@@ -26,29 +33,24 @@ export function PaddingSettingsPanel({ settings, onChange, onProcess, isProcessi
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-5">
+    <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-5 max-h-[calc(100vh-120px)] overflow-y-auto">
       <h2 className="font-semibold text-gray-800 text-base">Padding Settings</h2>
 
       {/* Fill type selector */}
-      <div className="flex gap-2">
-        <button
-          onClick={() => update({ fillType: 'color' })}
-          className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg border text-sm font-medium transition-colors
-            ${settings.fillType === 'color'
-              ? 'bg-indigo-600 border-indigo-600 text-white'
-              : 'border-gray-200 text-gray-600 hover:border-indigo-300 hover:text-indigo-600'}`}
-        >
-          <Palette className="w-4 h-4" /> Solid Color
-        </button>
-        <button
-          onClick={() => update({ fillType: 'image' })}
-          className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg border text-sm font-medium transition-colors
-            ${settings.fillType === 'image'
-              ? 'bg-indigo-600 border-indigo-600 text-white'
-              : 'border-gray-200 text-gray-600 hover:border-indigo-300 hover:text-indigo-600'}`}
-        >
-          <ImageIcon className="w-4 h-4" /> Background Image
-        </button>
+      <div className="grid grid-cols-4 gap-1.5">
+        {FILL_TYPES.map(({ value, label, icon: Icon }) => (
+          <button
+            key={value}
+            onClick={() => update({ fillType: value })}
+            className={`flex flex-col items-center gap-1 py-2 px-1 rounded-lg border text-xs font-medium transition-colors
+              ${settings.fillType === value
+                ? 'bg-indigo-600 border-indigo-600 text-white'
+                : 'border-gray-200 text-gray-600 hover:border-indigo-300 hover:text-indigo-600'}`}
+          >
+            <Icon className="w-4 h-4" />
+            {label}
+          </button>
+        ))}
       </div>
 
       {/* Color picker */}
@@ -105,7 +107,6 @@ export function PaddingSettingsPanel({ settings, onChange, onProcess, isProcessi
               />
             </div>
           </div>
-
           <div className="flex items-center gap-3">
             <label className="text-sm text-gray-600 font-medium w-16 shrink-0">Style</label>
             <div className="flex gap-2 flex-1">
@@ -126,10 +127,68 @@ export function PaddingSettingsPanel({ settings, onChange, onProcess, isProcessi
         </div>
       )}
 
+      {/* Gradient settings */}
+      {settings.fillType === 'gradient' && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            <label className="text-sm text-gray-600 font-medium w-16 shrink-0">Direction</label>
+            <div className="grid grid-cols-4 gap-1.5 flex-1">
+              {(['horizontal', 'vertical', 'diagonal', 'radial'] as GradientDirection[]).map(dir => (
+                <button
+                  key={dir}
+                  onClick={() => update({ gradientDirection: dir })}
+                  className={`py-1.5 rounded-lg border text-xs font-medium capitalize transition-colors
+                    ${settings.gradientDirection === dir
+                      ? 'bg-indigo-600 border-indigo-600 text-white'
+                      : 'border-gray-200 text-gray-600 hover:border-indigo-300'}`}
+                >
+                  {dir === 'horizontal' ? '↔' : dir === 'vertical' ? '↕' : dir === 'diagonal' ? '↗' : '◎'}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <label className="text-sm text-gray-600 font-medium w-16 shrink-0">Start</label>
+            <input
+              type="color"
+              value={settings.gradientColorStart}
+              onChange={e => update({ gradientColorStart: e.target.value })}
+              className="h-8 w-12 rounded cursor-pointer border border-gray-200"
+            />
+            <label className="text-sm text-gray-600 font-medium w-10 shrink-0 text-center">End</label>
+            <input
+              type="color"
+              value={settings.gradientColorEnd}
+              onChange={e => update({ gradientColorEnd: e.target.value })}
+              className="h-8 w-12 rounded cursor-pointer border border-gray-200"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Blur settings */}
+      {settings.fillType === 'blur' && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <label className="text-sm text-gray-600 font-medium">Blur Amount</label>
+            <span className="text-xs text-gray-500 font-mono">{settings.blurAmount}px</span>
+          </div>
+          <input
+            type="range"
+            min={5}
+            max={100}
+            step={5}
+            value={settings.blurAmount}
+            onChange={e => update({ blurAmount: Number(e.target.value) })}
+            className="w-full accent-indigo-600"
+          />
+        </div>
+      )}
+
       {/* Aspect ratio selector */}
       <div className="space-y-2">
         <label className="text-sm text-gray-600 font-medium">Target Aspect Ratio</label>
-        <div className="grid grid-cols-2 gap-1.5">
+        <div className="grid grid-cols-3 gap-1.5">
           {ASPECT_RATIO_PRESETS.map(preset => (
             <button
               key={preset.value}
@@ -144,6 +203,31 @@ export function PaddingSettingsPanel({ settings, onChange, onProcess, isProcessi
           ))}
         </div>
       </div>
+
+      {/* Custom ratio inputs */}
+      {settings.aspectRatio === 'custom' && (
+        <div className="flex items-center gap-2">
+          <label className="text-sm text-gray-600 font-medium w-16 shrink-0">Ratio</label>
+          <input
+            type="number"
+            min={1}
+            max={100}
+            value={settings.customRatioWidth}
+            onChange={e => update({ customRatioWidth: Math.max(1, Number(e.target.value)) })}
+            className="w-16 border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-indigo-300"
+          />
+          <span className="text-sm text-gray-400 font-bold">:</span>
+          <input
+            type="number"
+            min={1}
+            max={100}
+            value={settings.customRatioHeight}
+            onChange={e => update({ customRatioHeight: Math.max(1, Number(e.target.value)) })}
+            className="w-16 border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-indigo-300"
+          />
+          <span className="text-xs text-gray-400 ml-1">= {(settings.customRatioWidth / settings.customRatioHeight).toFixed(3)}</span>
+        </div>
+      )}
 
       {/* Border padding */}
       <div className="space-y-2">
@@ -160,9 +244,64 @@ export function PaddingSettingsPanel({ settings, onChange, onProcess, isProcessi
           onChange={e => update({ borderPadding: Number(e.target.value) })}
           className="w-full accent-indigo-600"
         />
+      </div>
+
+      {/* Output format */}
+      <div className="space-y-2">
+        <label className="text-sm text-gray-600 font-medium">Output Format</label>
+        <div className="flex gap-2">
+          {(['png', 'jpeg', 'webp'] as OutputFormat[]).map(fmt => (
+            <button
+              key={fmt}
+              onClick={() => update({ outputFormat: fmt })}
+              className={`flex-1 py-1.5 rounded-lg border text-xs font-medium uppercase transition-colors
+                ${settings.outputFormat === fmt
+                  ? 'bg-indigo-600 border-indigo-600 text-white'
+                  : 'border-gray-200 text-gray-600 hover:border-indigo-300'}`}
+            >
+              {fmt}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Quality slider (JPEG/WebP only) */}
+      {settings.outputFormat !== 'png' && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <label className="text-sm text-gray-600 font-medium">Quality</label>
+            <span className="text-xs text-gray-500 font-mono">{Math.round(settings.outputQuality * 100)}%</span>
+          </div>
+          <input
+            type="range"
+            min={0.1}
+            max={1}
+            step={0.05}
+            value={settings.outputQuality}
+            onChange={e => update({ outputQuality: Number(e.target.value) })}
+            className="w-full accent-indigo-600"
+          />
+        </div>
+      )}
+
+      {/* Max dimension */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <label className="text-sm text-gray-600 font-medium">Max Dimension</label>
+          <span className="text-xs text-gray-500 font-mono">{settings.maxDimension === 0 ? 'None' : `${settings.maxDimension}px`}</span>
+        </div>
+        <input
+          type="range"
+          min={0}
+          max={4000}
+          step={100}
+          value={settings.maxDimension}
+          onChange={e => update({ maxDimension: Number(e.target.value) })}
+          className="w-full accent-indigo-600"
+        />
         <div className="flex justify-between text-xs text-gray-400">
-          <span>0</span>
-          <span>200px</span>
+          <span>No limit</span>
+          <span>4000px</span>
         </div>
       </div>
 

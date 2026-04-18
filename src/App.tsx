@@ -16,7 +16,16 @@ const DEFAULT_SETTINGS: PaddingSettings = {
   fillImageDataUrl: null,
   fillImageStyle: 'cover',
   aspectRatio: 'auto',
+  customRatioWidth: 4,
+  customRatioHeight: 3,
   borderPadding: 0,
+  outputFormat: 'png',
+  outputQuality: 0.92,
+  maxDimension: 0,
+  gradientDirection: 'vertical',
+  gradientColorStart: '#ffffff',
+  gradientColorEnd: '#000000',
+  blurAmount: 40,
 };
 
 function readFileAsDataUrl(file: File): Promise<string> {
@@ -78,8 +87,13 @@ export default function App() {
     setProgress(0);
 
     // Determine target aspect ratio
-    const preset = ASPECT_RATIO_PRESETS.find(p => p.value === settings.aspectRatio);
-    const target = preset?.ratio ?? findMaxAspectRatio(photos);
+    let target: number;
+    if (settings.aspectRatio === 'custom') {
+      target = settings.customRatioWidth / settings.customRatioHeight;
+    } else {
+      const preset = ASPECT_RATIO_PRESETS.find(p => p.value === settings.aspectRatio);
+      target = preset?.ratio ?? findMaxAspectRatio(photos);
+    }
 
     const processed: UploadedPhoto[] = [];
     for (let i = 0; i < photos.length; i++) {
@@ -96,10 +110,11 @@ export default function App() {
     const processedPhotos = photos.filter(p => p.paddedDataUrl);
     if (processedPhotos.length === 0) return;
 
+    const ext = settings.outputFormat === 'jpeg' ? 'jpg' : settings.outputFormat;
     const zip = new JSZip();
     processedPhotos.forEach((photo, idx) => {
       const base64 = photo.paddedDataUrl!.split(',')[1];
-      zip.file(`squarify-${String(idx + 1).padStart(2, '0')}.png`, base64, { base64: true });
+      zip.file(`squarify-${String(idx + 1).padStart(2, '0')}.${ext}`, base64, { base64: true });
     });
 
     const blob = await zip.generateAsync({ type: 'blob' });

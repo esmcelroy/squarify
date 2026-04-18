@@ -8,9 +8,11 @@ export interface UploadedPhoto {
   paddedDataUrl: string | null;
 }
 
-export type PaddingFillType = 'color' | 'image';
+export type PaddingFillType = 'color' | 'image' | 'gradient' | 'blur';
+export type OutputFormat = 'png' | 'jpeg' | 'webp';
+export type GradientDirection = 'horizontal' | 'vertical' | 'diagonal' | 'radial';
 
-export type AspectRatioPreset = 'auto' | '1:1' | '4:3' | '3:4' | '16:9' | '9:16' | '3:2' | '2:3';
+export type AspectRatioPreset = 'auto' | '1:1' | '4:3' | '3:4' | '16:9' | '9:16' | '3:2' | '2:3' | 'custom';
 
 export const ASPECT_RATIO_PRESETS: { label: string; value: AspectRatioPreset; ratio: number | null }[] = [
   { label: 'Auto (widest)', value: 'auto', ratio: null },
@@ -21,6 +23,7 @@ export const ASPECT_RATIO_PRESETS: { label: string; value: AspectRatioPreset; ra
   { label: '2:3', value: '2:3', ratio: 2 / 3 },
   { label: '16:9', value: '16:9', ratio: 16 / 9 },
   { label: '9:16', value: '9:16', ratio: 9 / 16 },
+  { label: 'Custom', value: 'custom', ratio: null },
 ];
 
 export interface PaddingSettings {
@@ -29,5 +32,14 @@ export interface PaddingSettings {
   fillImageDataUrl: string | null;
   fillImageStyle: 'cover' | 'contain' | 'tile';
   aspectRatio: AspectRatioPreset;
-  borderPadding: number; // pixels of uniform border around the image
+  customRatioWidth: number;
+  customRatioHeight: number;
+  borderPadding: number;
+  outputFormat: OutputFormat;
+  outputQuality: number; // 0-1, only for JPEG/WebP
+  maxDimension: number; // 0 = no limit
+  gradientDirection: GradientDirection;
+  gradientColorStart: string;
+  gradientColorEnd: string;
+  blurAmount: number; // px blur radius for blur fill
 }

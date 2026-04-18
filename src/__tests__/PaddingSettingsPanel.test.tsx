@@ -10,7 +10,16 @@ const defaultSettings: PaddingSettings = {
   fillImageDataUrl: null,
   fillImageStyle: 'cover',
   aspectRatio: 'auto',
+  customRatioWidth: 4,
+  customRatioHeight: 3,
   borderPadding: 0,
+  outputFormat: 'png',
+  outputQuality: 0.92,
+  maxDimension: 0,
+  gradientDirection: 'vertical',
+  gradientColorStart: '#ffffff',
+  gradientColorEnd: '#000000',
+  blurAmount: 40,
 };
 
 function renderPanel(overrides: Partial<Parameters<typeof PaddingSettingsPanel>[0]> = {}) {
@@ -27,34 +36,39 @@ function renderPanel(overrides: Partial<Parameters<typeof PaddingSettingsPanel>[
 }
 
 describe('PaddingSettingsPanel', () => {
-  it('renders with default settings (Solid Color selected)', () => {
+  it('renders with default settings (Color fill selected)', () => {
     renderPanel();
-    expect(screen.getByText('Solid Color')).toBeInTheDocument();
-    expect(screen.getByText('Background Image')).toBeInTheDocument();
-    expect(screen.getByText('Color')).toBeInTheDocument();
+    expect(screen.getByText('Padding Settings')).toBeInTheDocument();
+    // Fill type buttons
+    const colorBtn = screen.getAllByText('Color')[0];
+    expect(colorBtn).toBeInTheDocument();
+    expect(screen.getByText('Gradient')).toBeInTheDocument();
+    expect(screen.getByText('Blur')).toBeInTheDocument();
   });
 
-  it('switches to Background Image fill type', async () => {
+  it('switches to Image fill type', async () => {
     const user = userEvent.setup();
     const { onChange } = renderPanel();
 
-    await user.click(screen.getByText('Background Image'));
+    // The fill type buttons are in the grid - "Image" is the second one
+    const fillButtons = screen.getAllByText('Image');
+    await user.click(fillButtons[0]);
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ fillType: 'image' }));
   });
 
-  it('switches to Solid Color fill type', async () => {
+  it('switches to Color fill type from image', async () => {
     const user = userEvent.setup();
     const { onChange } = renderPanel({
       settings: { ...defaultSettings, fillType: 'image' },
     });
 
-    await user.click(screen.getByText('Solid Color'));
+    const colorButtons = screen.getAllByText('Color');
+    await user.click(colorButtons[0]);
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ fillType: 'color' }));
   });
 
   it('shows color picker when fillType is color', () => {
     renderPanel();
-    expect(screen.getByText('Color')).toBeInTheDocument();
     const colorInput = document.querySelector('input[type="color"]');
     expect(colorInput).toBeInTheDocument();
   });
@@ -64,7 +78,29 @@ describe('PaddingSettingsPanel', () => {
       settings: { ...defaultSettings, fillType: 'image' },
     });
     expect(screen.getByText('Upload image')).toBeInTheDocument();
-    expect(screen.getByText('Image')).toBeInTheDocument();
+  });
+
+  it('shows gradient controls when fillType is gradient', () => {
+    renderPanel({
+      settings: { ...defaultSettings, fillType: 'gradient' },
+    });
+    expect(screen.getByText('Direction')).toBeInTheDocument();
+    expect(screen.getByText('Start')).toBeInTheDocument();
+    expect(screen.getByText('End')).toBeInTheDocument();
+  });
+
+  it('shows blur controls when fillType is blur', () => {
+    renderPanel({
+      settings: { ...defaultSettings, fillType: 'blur' },
+    });
+    expect(screen.getByText('Blur Amount')).toBeInTheDocument();
+  });
+
+  it('shows output format selector', () => {
+    renderPanel();
+    expect(screen.getByText('png')).toBeInTheDocument();
+    expect(screen.getByText('jpeg')).toBeInTheDocument();
+    expect(screen.getByText('webp')).toBeInTheDocument();
   });
 
   it('process button is disabled when hasPhotos is false', () => {
