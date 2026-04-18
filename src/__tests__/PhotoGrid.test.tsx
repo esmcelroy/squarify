@@ -1,7 +1,9 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { PhotoGrid } from '../components/PhotoGrid';
 import type { UploadedPhoto } from '../types';
+
+const originalCreateElement = document.createElement.bind(document);
 
 function makePhoto(overrides: Partial<UploadedPhoto> = {}): UploadedPhoto {
   return {
@@ -63,4 +65,167 @@ describe('PhotoGrid', () => {
     );
     expect(screen.getByTitle('Download')).toBeInTheDocument();
   });
+
+  it('download button triggers a download via anchor click', () => {
+    const clickSpy = vi.fn()
+    const createElementSpy = vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
+      if (tag === 'a') {
+        return { href: '', download: '', click: clickSpy } as any
+      }
+      return originalCreateElement(tag)
+    })
+
+    const photos = [
+      makePhoto({ id: 'p1', paddedDataUrl: 'data:image/png;base64,padded' }),
+    ]
+    render(
+      <PhotoGrid photos={photos} maxAspectRatio={800 / 600} onRemove={vi.fn()} isProcessed={true} outputFormat="png" />
+    )
+
+    fireEvent.click(screen.getByTitle('Download'))
+    expect(clickSpy).toHaveBeenCalled()
+    createElementSpy.mockRestore()
+  })
+
+  it('before/after toggle switches between original and padded label', async () => {
+    const photos = [
+      makePhoto({ id: 'p1', paddedDataUrl: 'data:image/png;base64,padded' }),
+    ]
+    render(
+      <PhotoGrid photos={photos} maxAspectRatio={800 / 600} onRemove={vi.fn()} isProcessed={true} outputFormat="png" />
+    )
+
+    // Initially shows padded
+    expect(screen.getByText('Padded')).toBeInTheDocument()
+
+    // Click toggle (eye off button) to show original
+    fireEvent.click(screen.getByTitle('Show original'))
+    expect(screen.getByText('Original')).toBeInTheDocument()
+
+    // Click again to go back to padded
+    fireEvent.click(screen.getByTitle('Show padded'))
+    expect(screen.getByText('Padded')).toBeInTheDocument()
+  })
+
+  it('copy button shows checkmark feedback after click', async () => {
+    const mockWrite = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { write: mockWrite },
+      writable: true,
+      configurable: true,
+    })
+    globalThis.ClipboardItem = class {
+      constructor(public items: Record<string, Blob>) {}
+    } as any
+
+    const pngBlob = new Blob(['px'], { type: 'image/png' })
+    const mockFetch = vi.fn().mockResolvedValue({
+      blob: () => Promise.resolve(pngBlob),
+    })
+    window.fetch = mockFetch as any
+
+    const photos = [
+      makePhoto({ id: 'p1', paddedDataUrl: 'data:image/png;base64,padded' }),
+    ]
+    render(
+      <PhotoGrid photos={photos} maxAspectRatio={800 / 600} onRemove={vi.fn()} isProcessed={true} outputFormat="png" />
+    )
+
+    expect(screen.getByTitle('Copy to clipboard')).toBeInTheDocument()
+
+    await act(async () => {
+      fireEvent.click(screen.getByTitle('Copy to clipboard'))
+    })
+
+    // Allow remaining async work to complete
+    await act(async () => {
+      await new Promise(r => setTimeout(r, 50))
+    })
+
+    expect(mockFetch).toHaveBeenCalled()
+    expect(mockWrite).toHaveBeenCalled()
+  })
+
+  it('uses jpg extension when outputFormat is jpeg', () => {
+    const photos = [
+      makePhoto({ id: 'p1', paddedDataUrl: 'data:image/jpeg;base64,padded' }),
+    ]
+
+    const clickSpy = vi.fn()
+    let downloadFilename = ''
+    const createElementSpy = vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
+      if (tag === 'a') {
+        const anchor = { href: '', download: '', click: clickSpy }
+        Object.defineProperty(anchor, 'download', {
+          set(v: string) { downloadFilename = v },
+          get() { return downloadFilename },
+        })
+        return anchor as any
+      }
+      return originalCreateElement(tag)
+    })
+
+    render(
+      <PhotoGrid photos={photos} maxAspectRatio={800 / 600} onRemove={vi.fn()} isProcessed={true} outputFormat="jpeg" />
+    )
+
+    fireEvent.click(screen.getByTitle('Download'))
+    expect(downloadFilename).toBe('squarify-01.jpg')
+    createElementSpy.mockRestore()
+  })
+
+  it('uses webp extension when outputFormat is webp', () => {
+    const photos = [
+      makePhoto({ id: 'p1', paddedDataUrl: 'data:image/webp;base64,padded' }),
+    ]
+
+    let downloadFilename = ''
+    const createElementSpy = vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
+      if (tag === 'a') {
+        const anchor = { href: '', download: '', click: vi.fn() }
+        Object.defineProperty(anchor, 'download', {
+          set(v: string) { downloadFilename = v },
+          get() { return downloadFilename },
+        })
+        return anchor as any
+      }
+      return originalCreateElement(tag)
+    })
+
+    render(
+      <PhotoGrid photos={photos} maxAspectRatio={800 / 600} onRemove={vi.fn()} isProcessed={true} outputFormat="webp" />
+    )
+
+    fireEvent.click(screen.getByTitle('Download'))
+    expect(downloadFilename).toBe('squarify-01.webp')
+    createElementSpy.mockRestore()
+  })
+
+  it('shows copy and download buttons only when processed with paddedDataUrl', () => {
+    const photos = [
+      makePhoto({ id: 'p1', paddedDataUrl: null }),
+    ]
+
+    // Not processed, no paddedDataUrl
+    const { rerender } = render(
+      <PhotoGrid photos={photos} maxAspectRatio={800 / 600} onRemove={vi.fn()} isProcessed={false} outputFormat="png" />
+    )
+    expect(screen.queryByTitle('Copy to clipboard')).not.toBeInTheDocument()
+    expect(screen.queryByTitle('Download')).not.toBeInTheDocument()
+
+    // Processed but no paddedDataUrl
+    rerender(
+      <PhotoGrid photos={photos} maxAspectRatio={800 / 600} onRemove={vi.fn()} isProcessed={true} outputFormat="png" />
+    )
+    expect(screen.queryByTitle('Copy to clipboard')).not.toBeInTheDocument()
+    expect(screen.queryByTitle('Download')).not.toBeInTheDocument()
+
+    // Processed with paddedDataUrl
+    const processedPhotos = [makePhoto({ id: 'p1', paddedDataUrl: 'data:image/png;base64,padded' })]
+    rerender(
+      <PhotoGrid photos={processedPhotos} maxAspectRatio={800 / 600} onRemove={vi.fn()} isProcessed={true} outputFormat="png" />
+    )
+    expect(screen.getByTitle('Copy to clipboard')).toBeInTheDocument()
+    expect(screen.getByTitle('Download')).toBeInTheDocument()
+  })
 });

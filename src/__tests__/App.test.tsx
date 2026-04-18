@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 
 // Mock dependencies before importing App
 vi.mock('../lib/imageUtils', () => ({
@@ -81,5 +82,126 @@ describe('App', () => {
   it('does not show clear all button when no photos', () => {
     render(<App />);
     expect(screen.queryByText('Clear all')).not.toBeInTheDocument();
+  });
+
+  // --- Theme toggle ---
+  it('clicking Dark theme button adds dark class to document', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByTitle('Dark'));
+    expect(document.documentElement.classList.contains('dark')).toBe(true);
+  });
+
+  it('clicking Light theme button removes dark class', async () => {
+    const user = userEvent.setup();
+    document.documentElement.classList.add('dark');
+    render(<App />);
+
+    await user.click(screen.getByTitle('Light'));
+    expect(document.documentElement.classList.contains('dark')).toBe(false);
+  });
+
+  // Helper to set up FileReader mock and upload mocks
+  function setupUploadMocks() {
+    const origFileReader = global.FileReader;
+
+    class MockFileReader {
+      result: string | null = 'data:image/png;base64,abc';
+      onload: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      readAsDataURL() {
+        setTimeout(() => this.onload?.(), 0);
+      }
+    }
+    global.FileReader = MockFileReader as any;
+
+    return {
+      restore: () => { global.FileReader = origFileReader; },
+    };
+  }
+
+  async function setupMocksAndUpload() {
+    const { processFilesForHeic } = await import('../lib/heicUtils');
+    const { getImageDimensions } = await import('../lib/imageUtils');
+
+    const mockFile = new File(['pixel'], 'test.png', { type: 'image/png' });
+    (processFilesForHeic as ReturnType<typeof vi.fn>).mockResolvedValue({
+      converted: [mockFile],
+      errors: [],
+    });
+    (getImageDimensions as ReturnType<typeof vi.fn>).mockResolvedValue({ width: 200, height: 100 });
+
+    return mockFile;
+  }
+
+  // --- Photo upload and stats bar ---
+  it('shows stats bar and clear all after uploading photos', async () => {
+    const mockFile = await setupMocksAndUpload();
+    const { restore } = setupUploadMocks();
+
+    render(<App />);
+
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [mockFile] } });
+
+    await waitFor(() => {
+      expect(screen.getByText(/1 photo/)).toBeInTheDocument();
+    });
+    expect(screen.getByText('Clear all')).toBeInTheDocument();
+
+    restore();
+  });
+
+  // --- Clear all ---
+  it('clicking Clear all removes all photos', async () => {
+    const user = userEvent.setup();
+    const mockFile = await setupMocksAndUpload();
+    const { restore } = setupUploadMocks();
+
+    render(<App />);
+
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [mockFile] } });
+
+    await waitFor(() => {
+      expect(screen.getByText(/1 photo/)).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByText('Clear all'));
+    expect(screen.queryByText(/1 photo/)).not.toBeInTheDocument();
+    expect(screen.queryByText('Clear all')).not.toBeInTheDocument();
+
+    restore();
+  });
+
+  // --- Process flow ---
+  it('processing photos shows Download All button after completion', async () => {
+    const user = userEvent.setup();
+    const mockFile = await setupMocksAndUpload();
+    const { padImageToAspectRatio } = await import('../lib/imageUtils');
+    (padImageToAspectRatio as ReturnType<typeof vi.fn>).mockResolvedValue('data:image/png;base64,padded');
+    const { restore } = setupUploadMocks();
+
+    render(<App />);
+
+    // Upload a photo
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [mockFile] } });
+
+    await waitFor(() => {
+      expect(screen.getByText(/1 photo/)).toBeInTheDocument();
+    });
+
+    // Process
+    const processButton = screen.getByText('Process Images').closest('button')!;
+    expect(processButton).not.toBeDisabled();
+    await user.click(processButton);
+
+    await waitFor(() => {
+      expect(screen.getByText('Download All as ZIP')).toBeInTheDocument();
+    });
+
+    restore();
   });
 });

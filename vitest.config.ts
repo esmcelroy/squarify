@@ -21,11 +21,10 @@ export default defineConfig({
         'src/libheif-js.d.ts',
       ],
       thresholds: {
-        // Goal: 80% — raise as coverage improves
-        lines: 50,
-        branches: 60,
-        functions: 35,
-        statements: 50,
+        lines: 80,
+        branches: 80,
+        functions: 70,
+        statements: 80,
       },
     },
   },
