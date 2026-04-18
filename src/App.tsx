@@ -6,6 +6,7 @@ import { PhotoGrid } from './components/PhotoGrid';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import type { UploadedPhoto, PaddingSettings } from './types';
 import { getImageDimensions, findMaxAspectRatio, padImageToAspectRatio } from './lib/imageUtils';
+import { processFilesForHeic } from './lib/heicUtils';
 import { Download, Trash2, Layers } from 'lucide-react';
 
 const DEFAULT_SETTINGS: PaddingSettings = {
@@ -34,8 +35,14 @@ export default function App() {
   const maxAspectRatio = findMaxAspectRatio(photos);
 
   const handlePhotosAdded = useCallback(async (files: File[]) => {
+    // Convert any HEIC/HEIF files to JPEG first
+    const { converted, errors } = await processFilesForHeic(files);
+    if (errors.length > 0) {
+      console.warn('HEIC conversion errors:', errors);
+    }
+
     const newPhotos: UploadedPhoto[] = [];
-    for (const file of files) {
+    for (const file of converted) {
       const dataUrl = await readFileAsDataUrl(file);
       const { width, height } = await getImageDimensions(dataUrl);
       newPhotos.push({

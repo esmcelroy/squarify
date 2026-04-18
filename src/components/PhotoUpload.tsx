@@ -7,7 +7,7 @@ interface PhotoUploadProps {
 }
 
 const MAX_PHOTOS = 20;
-const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/heic', 'image/heif'];
 
 export function PhotoUpload({ onPhotosAdded, currentCount }: PhotoUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
@@ -20,10 +20,15 @@ export function PhotoUpload({ onPhotosAdded, currentCount }: PhotoUploadProps) {
   };
 
   const handleFiles = useCallback((files: File[]) => {
-    const validFiles = files.filter(f => ACCEPTED_TYPES.includes(f.type));
+    const validFiles = files.filter(f => {
+      if (ACCEPTED_TYPES.includes(f.type)) return true;
+      // HEIC files may have empty MIME type — check extension
+      const ext = f.name.split('.').pop()?.toLowerCase();
+      return ext === 'heic' || ext === 'heif';
+    });
     const invalidCount = files.length - validFiles.length;
     if (invalidCount > 0) {
-      showError(`${invalidCount} file(s) skipped — only JPG, PNG, WebP, and GIF are supported.`);
+      showError(`${invalidCount} file(s) skipped — only JPG, PNG, WebP, GIF, and HEIC are supported.`);
     }
     const remaining = MAX_PHOTOS - currentCount;
     if (validFiles.length > remaining) {
@@ -72,7 +77,7 @@ export function PhotoUpload({ onPhotosAdded, currentCount }: PhotoUploadProps) {
               {isFull ? 'Maximum photos reached' : 'Drop photos here or click to browse'}
             </p>
             <p className="text-xs text-gray-500 mt-1">
-              JPG, PNG, WebP, GIF — up to {MAX_PHOTOS} photos ({currentCount}/{MAX_PHOTOS} added)
+              JPG, PNG, WebP, GIF, HEIC — up to {MAX_PHOTOS} photos ({currentCount}/{MAX_PHOTOS} added)
             </p>
           </div>
         </div>
@@ -80,7 +85,7 @@ export function PhotoUpload({ onPhotosAdded, currentCount }: PhotoUploadProps) {
           ref={inputRef}
           type="file"
           multiple
-          accept="image/jpeg,image/png,image/webp,image/gif"
+          accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,.heic,.heif"
           className="hidden"
           onChange={onInputChange}
         />
