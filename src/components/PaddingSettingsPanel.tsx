@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
-import type { PaddingSettings, PaddingFillType, GradientDirection, OutputFormat } from '../types';
+import type { PaddingSettings, PaddingFillType, GradientDirection, OutputFormat, WatermarkPosition, PatternType } from '../types';
 import { ASPECT_RATIO_PRESETS } from '../types';
-import { Palette, Image as ImageIcon, Wand2, Blend, Sparkles } from 'lucide-react';
+import { Palette, Image as ImageIcon, Wand2, Blend, Sparkles, Type, Layers, Grid3x3, Pipette } from 'lucide-react';
 
 interface PaddingSettingsPanelProps {
   settings: PaddingSettings;
@@ -16,12 +16,19 @@ const FILL_TYPES: { value: PaddingFillType; label: string; icon: typeof Palette 
   { value: 'image', label: 'Image', icon: ImageIcon },
   { value: 'gradient', label: 'Gradient', icon: Blend },
   { value: 'blur', label: 'Blur', icon: Sparkles },
+  { value: 'pattern', label: 'Pattern', icon: Grid3x3 },
 ];
 
 export function PaddingSettingsPanel({ settings, onChange, onProcess, isProcessing, hasPhotos }: PaddingSettingsPanelProps) {
   const bgImageInputRef = useRef<HTMLInputElement>(null);
 
-  const update = (partial: Partial<PaddingSettings>) => onChange({ ...settings, ...partial });
+  // Ensure watermark and shadow have defaults for backward compatibility
+  const watermark = settings.watermark ?? { enabled: false, text: '', fontSize: 48, color: '#ffffff', opacity: 0.5, position: 'bottom-right' as WatermarkPosition };
+  const shadow = settings.shadow ?? { enabled: false, color: '#000000', blur: 20, offsetX: 0, offsetY: 4 };
+  const pattern = settings.pattern ?? { type: 'dots' as PatternType, color1: '#ffffff', color2: '#e5e7eb', scale: 2 };
+  const safeSettings = { ...settings, watermark, shadow, pattern };
+
+  const update = (partial: Partial<PaddingSettings>) => onChange({ ...safeSettings, ...partial });
 
   const handleBgImageFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -33,11 +40,11 @@ export function PaddingSettingsPanel({ settings, onChange, onProcess, isProcessi
   };
 
   return (
-    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-5 space-y-5 max-h-[calc(100vh-120px)] overflow-y-auto">
+    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4 md:p-5 space-y-4 md:space-y-5 md:max-h-[calc(100vh-120px)] overflow-y-auto">
       <h2 className="font-semibold text-gray-800 dark:text-gray-200 text-base">Padding Settings</h2>
 
       {/* Fill type selector */}
-      <div className="grid grid-cols-4 gap-1.5">
+      <div className="grid grid-cols-5 gap-1 md:gap-1.5">
         {FILL_TYPES.map(({ value, label, icon: Icon }) => (
           <button
             key={value}
@@ -77,6 +84,22 @@ export function PaddingSettingsPanel({ settings, onChange, onProcess, isProcessi
               maxLength={7}
               placeholder="#ffffff"
             />
+            {'EyeDropper' in window && (
+              <button
+                onClick={async () => {
+                  try {
+                    const eyeDropper = new (window as unknown as { EyeDropper: new () => { open: () => Promise<{ sRGBHex: string }> } }).EyeDropper();
+                    const result = await eyeDropper.open();
+                    update({ fillColor: result.sRGBHex });
+                  } catch { /* user cancelled */ }
+                }}
+                className="h-9 w-9 flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-indigo-300 hover:text-indigo-600 transition-colors shrink-0"
+                aria-label="Pick color from screen"
+                title="Pick color from screen"
+              >
+                <Pipette className="w-4 h-4" />
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -191,8 +214,62 @@ export function PaddingSettingsPanel({ settings, onChange, onProcess, isProcessi
         </div>
       )}
 
-      {/* Aspect ratio selector */}
-      <div className="space-y-2">
+      {/* Pattern settings */}
+      {settings.fillType === 'pattern' && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            <label className="text-sm text-gray-600 dark:text-gray-400 font-medium w-16 shrink-0">Style</label>
+            <div className="grid grid-cols-2 gap-1.5 flex-1">
+              {(['dots', 'stripes', 'checkerboard', 'diagonal-lines'] as PatternType[]).map(pt => (
+                <button
+                  key={pt}
+                  onClick={() => update({ pattern: { ...pattern, type: pt } })}
+                  className={`py-1.5 rounded-lg border text-xs font-medium capitalize transition-colors
+                    ${pattern.type === pt
+                      ? 'bg-indigo-600 border-indigo-600 text-white'
+                      : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-indigo-300'}`}
+                >
+                  {pt.replace('-', ' ')}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <label className="text-xs text-gray-500 dark:text-gray-400 w-16 shrink-0">Color 1</label>
+            <input
+              type="color"
+              aria-label="Pattern color 1"
+              value={pattern.color1}
+              onChange={e => update({ pattern: { ...pattern, color1: e.target.value } })}
+              className="h-8 w-12 rounded cursor-pointer border border-gray-200 dark:border-gray-600"
+            />
+            <label className="text-xs text-gray-500 dark:text-gray-400 w-16 shrink-0 text-center">Color 2</label>
+            <input
+              type="color"
+              aria-label="Pattern color 2"
+              value={pattern.color2}
+              onChange={e => update({ pattern: { ...pattern, color2: e.target.value } })}
+              className="h-8 w-12 rounded cursor-pointer border border-gray-200 dark:border-gray-600"
+            />
+          </div>
+          <div className="flex items-center gap-3">
+            <label className="text-xs text-gray-500 dark:text-gray-400 w-16 shrink-0">Scale</label>
+            <input
+              type="range"
+              aria-label="Pattern scale"
+              min={1}
+              max={10}
+              step={0.5}
+              value={pattern.scale}
+              onChange={e => update({ pattern: { ...pattern, scale: Number(e.target.value) } })}
+              className="flex-1 accent-indigo-600"
+            />
+            <span className="text-xs text-gray-500 dark:text-gray-400 font-mono w-8 text-right">{pattern.scale}×</span>
+          </div>
+        </div>
+      )}
+
+      {/* Aspect ratio selector */}      <div className="space-y-2">
         <label className="text-sm text-gray-600 dark:text-gray-400 font-medium">Target Aspect Ratio</label>
         <div className="grid grid-cols-3 gap-1.5">
           {ASPECT_RATIO_PRESETS.map(preset => (
@@ -208,9 +285,35 @@ export function PaddingSettingsPanel({ settings, onChange, onProcess, isProcessi
             </button>
           ))}
         </div>
-      </div>
 
-      {/* Custom ratio inputs */}
+        {/* Social media presets */}
+        <div className="pt-2">
+          <p className="text-xs text-gray-400 dark:text-gray-500 mb-1.5">Social Media Presets</p>
+          <div className="grid grid-cols-2 gap-1.5">
+            {([
+              { label: 'IG Post', w: 1, h: 1, dim: 1080 },
+              { label: 'IG Story', w: 9, h: 16, dim: 1080 },
+              { label: 'Facebook', w: 1200, h: 630, dim: 1200 },
+              { label: 'X / Twitter', w: 16, h: 9, dim: 1200 },
+              { label: 'LinkedIn', w: 1200, h: 627, dim: 1200 },
+              { label: 'YouTube', w: 16, h: 9, dim: 1280 },
+            ] as const).map(({ label, w, h, dim }) => (
+              <button
+                key={label}
+                onClick={() => update({
+                  aspectRatio: 'custom',
+                  customRatioWidth: w,
+                  customRatioHeight: h,
+                  maxDimension: dim,
+                })}
+                className="py-1.5 px-2 rounded-lg border border-gray-200 dark:border-gray-600 text-xs font-medium text-gray-600 dark:text-gray-400 hover:border-indigo-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
       {settings.aspectRatio === 'custom' && (
         <div className="flex items-center gap-2">
           <label className="text-sm text-gray-600 dark:text-gray-400 font-medium w-16 shrink-0">Ratio</label>
@@ -314,6 +417,161 @@ export function PaddingSettingsPanel({ settings, onChange, onProcess, isProcessi
           <span>No limit</span>
           <span>4000px</span>
         </div>
+      </div>
+
+      {/* Watermark */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <label className="text-sm text-gray-600 dark:text-gray-400 font-medium flex items-center gap-1.5">
+            <Type className="w-4 h-4" />
+            Watermark
+          </label>
+          <button
+            onClick={() => update({ watermark: { ...watermark, enabled: !watermark.enabled } })}
+            className={`relative w-9 h-5 rounded-full transition-colors ${watermark.enabled ? 'bg-indigo-600' : 'bg-gray-300 dark:bg-gray-600'}`}
+            aria-label="Toggle watermark"
+          >
+            <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform ${watermark.enabled ? 'translate-x-4' : ''}`} />
+          </button>
+        </div>
+        {watermark.enabled && (
+          <div className="space-y-3 pl-1">
+            <input
+              type="text"
+              aria-label="Watermark text"
+              value={watermark.text}
+              onChange={e => update({ watermark: { ...watermark, text: e.target.value } })}
+              placeholder="Enter watermark text…"
+              className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+            />
+            <div className="flex items-center gap-3">
+              <label className="text-xs text-gray-500 dark:text-gray-400 w-12 shrink-0">Size</label>
+              <input
+                type="range"
+                aria-label="Watermark font size"
+                min={12}
+                max={120}
+                step={2}
+                value={watermark.fontSize}
+                onChange={e => update({ watermark: { ...watermark, fontSize: Number(e.target.value) } })}
+                className="flex-1 accent-indigo-600"
+              />
+              <span className="text-xs text-gray-500 dark:text-gray-400 font-mono w-10 text-right">{watermark.fontSize}px</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <label className="text-xs text-gray-500 dark:text-gray-400 w-12 shrink-0">Color</label>
+              <input
+                type="color"
+                aria-label="Watermark color"
+                value={watermark.color}
+                onChange={e => update({ watermark: { ...watermark, color: e.target.value } })}
+                className="h-8 w-10 rounded cursor-pointer border border-gray-200 dark:border-gray-600"
+              />
+              <label className="text-xs text-gray-500 dark:text-gray-400 w-12 shrink-0 text-center">Opacity</label>
+              <input
+                type="range"
+                aria-label="Watermark opacity"
+                min={0.1}
+                max={1}
+                step={0.05}
+                value={watermark.opacity}
+                onChange={e => update({ watermark: { ...watermark, opacity: Number(e.target.value) } })}
+                className="flex-1 accent-indigo-600"
+              />
+              <span className="text-xs text-gray-500 dark:text-gray-400 font-mono w-10 text-right">{Math.round(watermark.opacity * 100)}%</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <label className="text-xs text-gray-500 dark:text-gray-400 w-12 shrink-0">Position</label>
+              <div className="grid grid-cols-3 gap-1 flex-1">
+                {(['top-left', 'top-center', 'top-right', 'bottom-left', 'bottom-center', 'bottom-right'] as WatermarkPosition[]).map(pos => (
+                  <button
+                    key={pos}
+                    onClick={() => update({ watermark: { ...watermark, position: pos } })}
+                    className={`py-1 rounded text-[10px] font-medium capitalize transition-colors
+                      ${watermark.position === pos
+                        ? 'bg-indigo-600 text-white'
+                        : 'border border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-indigo-300'}`}
+                  >
+                    {pos.replace('-', ' ')}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Drop Shadow */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <label className="text-sm text-gray-600 dark:text-gray-400 font-medium flex items-center gap-1.5">
+            <Layers className="w-4 h-4" />
+            Drop Shadow
+          </label>
+          <button
+            onClick={() => update({ shadow: { ...shadow, enabled: !shadow.enabled } })}
+            className={`relative w-9 h-5 rounded-full transition-colors ${shadow.enabled ? 'bg-indigo-600' : 'bg-gray-300 dark:bg-gray-600'}`}
+            aria-label="Toggle drop shadow"
+          >
+            <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform ${shadow.enabled ? 'translate-x-4' : ''}`} />
+          </button>
+        </div>
+        {shadow.enabled && (
+          <div className="space-y-3 pl-1">
+            <div className="flex items-center gap-3">
+              <label className="text-xs text-gray-500 dark:text-gray-400 w-12 shrink-0">Color</label>
+              <input
+                type="color"
+                aria-label="Shadow color"
+                value={shadow.color}
+                onChange={e => update({ shadow: { ...shadow, color: e.target.value } })}
+                className="h-8 w-10 rounded cursor-pointer border border-gray-200 dark:border-gray-600"
+              />
+            </div>
+            <div className="flex items-center gap-3">
+              <label className="text-xs text-gray-500 dark:text-gray-400 w-12 shrink-0">Blur</label>
+              <input
+                type="range"
+                aria-label="Shadow blur"
+                min={0}
+                max={50}
+                step={1}
+                value={shadow.blur}
+                onChange={e => update({ shadow: { ...shadow, blur: Number(e.target.value) } })}
+                className="flex-1 accent-indigo-600"
+              />
+              <span className="text-xs text-gray-500 dark:text-gray-400 font-mono w-10 text-right">{shadow.blur}px</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <label className="text-xs text-gray-500 dark:text-gray-400 w-12 shrink-0">Offset X</label>
+              <input
+                type="range"
+                aria-label="Shadow offset X"
+                min={-30}
+                max={30}
+                step={1}
+                value={shadow.offsetX}
+                onChange={e => update({ shadow: { ...shadow, offsetX: Number(e.target.value) } })}
+                className="flex-1 accent-indigo-600"
+              />
+              <span className="text-xs text-gray-500 dark:text-gray-400 font-mono w-10 text-right">{shadow.offsetX}px</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <label className="text-xs text-gray-500 dark:text-gray-400 w-12 shrink-0">Offset Y</label>
+              <input
+                type="range"
+                aria-label="Shadow offset Y"
+                min={-30}
+                max={30}
+                step={1}
+                value={shadow.offsetY}
+                onChange={e => update({ shadow: { ...shadow, offsetY: Number(e.target.value) } })}
+                className="flex-1 accent-indigo-600"
+              />
+              <span className="text-xs text-gray-500 dark:text-gray-400 font-mono w-10 text-right">{shadow.offsetY}px</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Process button */}

@@ -8,9 +8,35 @@ export interface UploadedPhoto {
   paddedDataUrl: string | null;
 }
 
-export type PaddingFillType = 'color' | 'image' | 'gradient' | 'blur';
+export type PaddingFillType = 'color' | 'image' | 'gradient' | 'blur' | 'pattern';
 export type OutputFormat = 'png' | 'jpeg' | 'webp';
 export type GradientDirection = 'horizontal' | 'vertical' | 'diagonal' | 'radial';
+export type WatermarkPosition = 'top-left' | 'top-center' | 'top-right' | 'center' | 'bottom-left' | 'bottom-center' | 'bottom-right';
+export type PatternType = 'dots' | 'stripes' | 'checkerboard' | 'diagonal-lines';
+
+export interface PatternSettings {
+  type: PatternType;
+  color1: string;
+  color2: string;
+  scale: number; // 1-10, multiplier for pattern size
+}
+
+export interface WatermarkSettings {
+  enabled: boolean;
+  text: string;
+  fontSize: number;
+  color: string;
+  opacity: number; // 0-1
+  position: WatermarkPosition;
+}
+
+export interface ShadowSettings {
+  enabled: boolean;
+  color: string;
+  blur: number;
+  offsetX: number;
+  offsetY: number;
+}
 
 export type AspectRatioPreset = 'auto' | '1:1' | '4:3' | '3:4' | '16:9' | '9:16' | '3:2' | '2:3' | 'custom';
 
@@ -42,4 +68,7 @@ export interface PaddingSettings {
   gradientColorStart: string;
   gradientColorEnd: string;
   blurAmount: number; // px blur radius for blur fill
+  pattern: PatternSettings;
+  watermark: WatermarkSettings;
+  shadow: ShadowSettings;
 }

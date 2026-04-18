@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Download, Trash2, Crown, Eye, EyeOff, Copy, Check } from 'lucide-react';
+import { Download, Trash2, Crown, Eye, EyeOff, Copy, Check, Share2 } from 'lucide-react';
 import type { UploadedPhoto } from '../types';
 
 interface PhotoGridProps {
@@ -51,6 +51,22 @@ function convertToPngBlob(dataUrl: string): Promise<Blob> {
   });
 }
 
+async function shareImage(dataUrl: string, filename: string): Promise<boolean> {
+  try {
+    if (!navigator.share || !navigator.canShare) return false;
+    const res = await fetch(dataUrl);
+    const blob = await res.blob();
+    const file = new File([blob], filename, { type: blob.type });
+    if (!navigator.canShare({ files: [file] })) return false;
+    await navigator.share({ files: [file] });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+const supportsShare = typeof navigator !== 'undefined' && !!navigator.share && !!navigator.canShare;
+
 export function PhotoGrid({ photos, maxAspectRatio, onRemove, isProcessed, outputFormat }: PhotoGridProps) {
   const [showOriginal, setShowOriginal] = useState<Record<string, boolean>>({});
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -72,7 +88,7 @@ export function PhotoGrid({ photos, maxAspectRatio, onRemove, isProcessed, outpu
   const ext = outputFormat === 'jpeg' ? 'jpg' : outputFormat;
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-4">
       {photos.map((photo, idx) => {
         const isDominant = Math.abs(photo.aspectRatio - maxAspectRatio) < 0.001;
         const viewingOriginal = showOriginal[photo.id] ?? false;
@@ -121,6 +137,15 @@ export function PhotoGrid({ photos, maxAspectRatio, onRemove, isProcessed, outpu
                     >
                       {copiedId === photo.id ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
+                    {supportsShare && (
+                      <button
+                        onClick={() => shareImage(photo.paddedDataUrl!, filename)}
+                        title="Share"
+                        className="p-1.5 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950 transition-colors"
+                      >
+                        <Share2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                     <button
                       onClick={() => downloadDataUrl(photo.paddedDataUrl!, filename)}
                       title="Download"
@@ -134,7 +159,7 @@ export function PhotoGrid({ photos, maxAspectRatio, onRemove, isProcessed, outpu
             </div>
 
             {/* Action overlay */}
-            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity flex items-center justify-center gap-2">
               {isProcessed && photo.paddedDataUrl && (
                 <button
                   onClick={() => togglePreview(photo.id)}

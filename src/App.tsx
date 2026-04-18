@@ -3,6 +3,7 @@ import JSZip from 'jszip';
 import { PhotoUpload } from './components/PhotoUpload';
 import { PaddingSettingsPanel } from './components/PaddingSettingsPanel';
 import { PhotoGrid } from './components/PhotoGrid';
+import { AppFooter } from './components/AppFooter';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useDarkMode, type Theme } from './hooks/useDarkMode';
 import type { UploadedPhoto, PaddingSettings } from './types';
@@ -27,6 +28,27 @@ const DEFAULT_SETTINGS: PaddingSettings = {
   gradientColorStart: '#ffffff',
   gradientColorEnd: '#000000',
   blurAmount: 40,
+  pattern: {
+    type: 'dots',
+    color1: '#ffffff',
+    color2: '#e5e7eb',
+    scale: 2,
+  },
+  watermark: {
+    enabled: false,
+    text: '',
+    fontSize: 48,
+    color: '#ffffff',
+    opacity: 0.5,
+    position: 'bottom-right',
+  },
+  shadow: {
+    enabled: false,
+    color: '#000000',
+    blur: 20,
+    offsetX: 0,
+    offsetY: 4,
+  },
 };
 
 function readFileAsDataUrl(file: File): Promise<string> {
@@ -144,7 +166,7 @@ export default function App() {
           </div>
           <div className="flex-1">
             <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100 leading-tight">Squarify</h1>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Pad photos to a uniform aspect ratio</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 hidden sm:block">Pad photos to a uniform aspect ratio</p>
           </div>
           {/* Theme toggle */}
           <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
@@ -230,6 +252,8 @@ export default function App() {
           outputFormat={settings.outputFormat}
         />
       </main>
+
+      <AppFooter />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import type { UploadedPhoto, PaddingSettings } from '../types';
+import type { UploadedPhoto, PaddingSettings, WatermarkSettings, WatermarkPosition, PatternSettings } from '../types';
 
 export function getImageDimensions(dataUrl: string): Promise<{ width: number; height: number }> {
   return new Promise((resolve, reject) => {
@@ -66,6 +66,8 @@ export async function padImageToAspectRatio(
     drawGradientFill(ctx, canvasWidth, canvasHeight, settings);
   } else if (settings.fillType === 'blur') {
     await drawBlurFill(ctx, photo.dataUrl, canvasWidth, canvasHeight, settings.blurAmount);
+  } else if (settings.fillType === 'pattern' && settings.pattern) {
+    drawPatternFill(ctx, canvasWidth, canvasHeight, settings.pattern);
   } else if (settings.fillType === 'image' && settings.fillImageDataUrl) {
     await drawBackgroundImage(ctx, settings.fillImageDataUrl, canvasWidth, canvasHeight, settings.fillImageStyle);
   } else {
@@ -85,7 +87,25 @@ export async function padImageToAspectRatio(
   const scaledPhotoHeight = Math.round(photo.height * scale);
   const offsetX = Math.floor((canvasWidth - scaledPhotoWidth) / 2);
   const offsetY = Math.floor((canvasHeight - scaledPhotoHeight) / 2);
+
+  // Draw drop shadow behind the photo if enabled
+  if (settings.shadow?.enabled) {
+    ctx.save();
+    ctx.shadowColor = settings.shadow.color;
+    ctx.shadowBlur = settings.shadow.blur;
+    ctx.shadowOffsetX = settings.shadow.offsetX;
+    ctx.shadowOffsetY = settings.shadow.offsetY;
+    ctx.fillStyle = 'rgba(0,0,0,1)';
+    ctx.fillRect(offsetX, offsetY, scaledPhotoWidth, scaledPhotoHeight);
+    ctx.restore();
+  }
+
   ctx.drawImage(img, offsetX, offsetY, scaledPhotoWidth, scaledPhotoHeight);
+
+  // Draw watermark if enabled
+  if (settings.watermark?.enabled && settings.watermark.text.trim()) {
+    drawWatermark(ctx, canvasWidth, canvasHeight, settings.watermark);
+  }
 
   // Output in selected format
   const mimeType = `image/${settings.outputFormat}`;
@@ -189,5 +209,134 @@ async function drawBackgroundImage(
     const scaledW = bgImg.width * scale;
     const scaledH = bgImg.height * scale;
     ctx.drawImage(bgImg, (canvasWidth - scaledW) / 2, (canvasHeight - scaledH) / 2, scaledW, scaledH);
+  }
+}
+
+export function drawWatermark(
+  ctx: CanvasRenderingContext2D,
+  canvasWidth: number,
+  canvasHeight: number,
+  watermark: WatermarkSettings
+): void {
+  const text = watermark.text.trim();
+  if (!text) return;
+
+  ctx.save();
+  ctx.globalAlpha = watermark.opacity;
+  ctx.fillStyle = watermark.color;
+  ctx.font = `${watermark.fontSize}px sans-serif`;
+
+  const metrics = ctx.measureText(text);
+  const textHeight = watermark.fontSize;
+  const padding = Math.max(canvasWidth, canvasHeight) * 0.02;
+
+  const { x, y } = getWatermarkPosition(
+    watermark.position,
+    canvasWidth,
+    canvasHeight,
+    metrics.width,
+    textHeight,
+    padding
+  );
+
+  ctx.fillText(text, x, y);
+  ctx.restore();
+}
+
+export function getWatermarkPosition(
+  position: WatermarkPosition,
+  canvasWidth: number,
+  canvasHeight: number,
+  textWidth: number,
+  textHeight: number,
+  padding: number
+): { x: number; y: number } {
+  let x: number;
+  let y: number;
+
+  // Horizontal
+  if (position.includes('left')) {
+    x = padding;
+  } else if (position.includes('right')) {
+    x = canvasWidth - textWidth - padding;
+  } else {
+    x = (canvasWidth - textWidth) / 2;
+  }
+
+  // Vertical
+  if (position.includes('top')) {
+    y = textHeight + padding;
+  } else if (position.includes('bottom')) {
+    y = canvasHeight - padding;
+  } else {
+    y = (canvasHeight + textHeight) / 2;
+  }
+
+  return { x, y };
+}
+
+export function drawPatternFill(
+  ctx: CanvasRenderingContext2D,
+  canvasWidth: number,
+  canvasHeight: number,
+  pattern: PatternSettings
+): void {
+  const baseSize = 20 * pattern.scale;
+
+  // Fill background with color1
+  ctx.fillStyle = pattern.color1;
+  ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+  ctx.fillStyle = pattern.color2;
+
+  switch (pattern.type) {
+    case 'dots': {
+      const spacing = baseSize * 2;
+      const radius = baseSize * 0.4;
+      for (let y = spacing / 2; y < canvasHeight; y += spacing) {
+        for (let x = spacing / 2; x < canvasWidth; x += spacing) {
+          ctx.beginPath();
+          ctx.arc(x, y, radius, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      break;
+    }
+    case 'stripes': {
+      const stripeWidth = baseSize;
+      for (let x = 0; x < canvasWidth; x += stripeWidth * 2) {
+        ctx.fillRect(x, 0, stripeWidth, canvasHeight);
+      }
+      break;
+    }
+    case 'checkerboard': {
+      const cellSize = baseSize;
+      for (let y = 0; y < canvasHeight; y += cellSize) {
+        for (let x = 0; x < canvasWidth; x += cellSize) {
+          const col = Math.floor(x / cellSize);
+          const row = Math.floor(y / cellSize);
+          if ((col + row) % 2 === 1) {
+            ctx.fillRect(x, y, cellSize, cellSize);
+          }
+        }
+      }
+      break;
+    }
+    case 'diagonal-lines': {
+      const lineWidth = baseSize * 0.5;
+      const spacing = baseSize * 2;
+      ctx.save();
+      ctx.strokeStyle = pattern.color2;
+      ctx.lineWidth = lineWidth;
+      const maxDim = Math.max(canvasWidth, canvasHeight) * 2;
+      for (let i = -maxDim; i < maxDim; i += spacing) {
+        ctx.beginPath();
+        ctx.moveTo(i, 0);
+        ctx.lineTo(i + maxDim, maxDim);
+        ctx.stroke();
+      }
+      ctx.restore();
+      break;
+    }
   }
 }

@@ -61,7 +61,7 @@ export function PhotoUpload({ onPhotosAdded, currentCount }: PhotoUploadProps) {
         onDrop={onDrop}
         onDragOver={onDragOver}
         onDragLeave={onDragLeave}
-        className={`border-2 border-dashed rounded-xl p-10 text-center transition-colors cursor-pointer select-none
+        className={`border-2 border-dashed rounded-xl p-6 md:p-10 text-center transition-colors cursor-pointer select-none
           ${isFull ? 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 cursor-not-allowed opacity-60' :
             isDragging ? 'border-indigo-400 bg-indigo-50 dark:bg-indigo-950' : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 hover:border-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950'}`}
       >

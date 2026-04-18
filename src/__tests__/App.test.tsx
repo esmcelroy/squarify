@@ -48,7 +48,7 @@ describe('App', () => {
 
   it('renders with header "Squarify"', () => {
     render(<App />);
-    expect(screen.getByText('Squarify')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Squarify' })).toBeInTheDocument();
   });
 
   it('renders the subtitle', () => {
