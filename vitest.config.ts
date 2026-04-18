@@ -22,10 +22,10 @@ export default defineConfig({
       ],
       thresholds: {
         // Goal: 80% — raise as coverage improves
-        lines: 20,
-        branches: 40,
-        functions: 20,
-        statements: 20,
+        lines: 50,
+        branches: 60,
+        functions: 35,
+        statements: 50,
       },
     },
   },
