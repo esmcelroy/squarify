@@ -20,6 +20,7 @@ const defaultProps = {
   maxAspectRatio: 800 / 600,
   onRemove: vi.fn(),
   isProcessed: false,
+  outputFormat: 'png',
 };
 
 describe('PhotoGrid', () => {
@@ -43,7 +44,7 @@ describe('PhotoGrid', () => {
       makePhoto({ id: 'p1', aspectRatio: 1.5 }),
       makePhoto({ id: 'p2', aspectRatio: 2.0 }),
     ];
-    render(<PhotoGrid photos={photos} maxAspectRatio={2.0} onRemove={vi.fn()} isProcessed={false} />);
+    render(<PhotoGrid photos={photos} maxAspectRatio={2.0} onRemove={vi.fn()} isProcessed={false} outputFormat="png" />);
     expect(screen.getByText('Widest')).toBeInTheDocument();
   });
 
@@ -53,12 +54,12 @@ describe('PhotoGrid', () => {
     ];
 
     const { rerender } = render(
-      <PhotoGrid photos={photos} maxAspectRatio={800 / 600} onRemove={vi.fn()} isProcessed={false} />
+      <PhotoGrid photos={photos} maxAspectRatio={800 / 600} onRemove={vi.fn()} isProcessed={false} outputFormat="png" />
     );
     expect(screen.queryByTitle('Download')).not.toBeInTheDocument();
 
     rerender(
-      <PhotoGrid photos={photos} maxAspectRatio={800 / 600} onRemove={vi.fn()} isProcessed={true} />
+      <PhotoGrid photos={photos} maxAspectRatio={800 / 600} onRemove={vi.fn()} isProcessed={true} outputFormat="png" />
     );
     expect(screen.getByTitle('Download')).toBeInTheDocument();
   });

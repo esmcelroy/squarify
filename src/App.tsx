@@ -227,6 +227,7 @@ export default function App() {
           maxAspectRatio={maxAspectRatio}
           onRemove={handleRemove}
           isProcessed={isProcessed}
+          outputFormat={settings.outputFormat}
         />
       </main>
     </div>

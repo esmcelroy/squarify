@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Download, Trash2, Crown, Eye, EyeOff } from 'lucide-react';
+import { Download, Trash2, Crown, Eye, EyeOff, Copy, Check } from 'lucide-react';
 import type { UploadedPhoto } from '../types';
 
 interface PhotoGridProps {
@@ -7,6 +7,7 @@ interface PhotoGridProps {
   maxAspectRatio: number;
   onRemove: (id: string) => void;
   isProcessed: boolean;
+  outputFormat: string;
 }
 
 function downloadDataUrl(dataUrl: string, filename: string) {
@@ -16,14 +17,59 @@ function downloadDataUrl(dataUrl: string, filename: string) {
   a.click();
 }
 
-export function PhotoGrid({ photos, maxAspectRatio, onRemove, isProcessed }: PhotoGridProps) {
+async function copyToClipboard(dataUrl: string): Promise<boolean> {
+  try {
+    const res = await fetch(dataUrl);
+    const blob = await res.blob();
+    // Clipboard API requires PNG for images
+    const pngBlob = blob.type === 'image/png' ? blob : await convertToPngBlob(dataUrl);
+    await navigator.clipboard.write([
+      new ClipboardItem({ 'image/png': pngBlob }),
+    ]);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function convertToPngBlob(dataUrl: string): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d')!;
+      ctx.drawImage(img, 0, 0);
+      canvas.toBlob(blob => {
+        if (blob) resolve(blob);
+        else reject(new Error('Failed to convert to PNG'));
+      }, 'image/png');
+    };
+    img.onerror = reject;
+    img.src = dataUrl;
+  });
+}
+
+export function PhotoGrid({ photos, maxAspectRatio, onRemove, isProcessed, outputFormat }: PhotoGridProps) {
   const [showOriginal, setShowOriginal] = useState<Record<string, boolean>>({});
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   if (photos.length === 0) return null;
 
   const togglePreview = (id: string) => {
     setShowOriginal(prev => ({ ...prev, [id]: !prev[id] }));
   };
+
+  const handleCopy = async (id: string, dataUrl: string) => {
+    const ok = await copyToClipboard(dataUrl);
+    if (ok) {
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+    }
+  };
+
+  const ext = outputFormat === 'jpeg' ? 'jpg' : outputFormat;
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
@@ -33,7 +79,7 @@ export function PhotoGrid({ photos, maxAspectRatio, onRemove, isProcessed }: Pho
         const displayUrl = isProcessed && photo.paddedDataUrl && !viewingOriginal
           ? photo.paddedDataUrl
           : photo.dataUrl;
-        const filename = `squarify-${String(idx + 1).padStart(2, '0')}.png`;
+        const filename = `squarify-${String(idx + 1).padStart(2, '0')}.${ext}`;
 
         return (
           <div key={photo.id} className="group relative bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-600 transition-colors">
@@ -59,31 +105,44 @@ export function PhotoGrid({ photos, maxAspectRatio, onRemove, isProcessed }: Pho
               </div>
             )}
 
-            {/* Info bar */}
+            {/* Info bar with action buttons */}
             <div className="px-3 py-2 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
-              <p className="text-xs text-gray-500 dark:text-gray-400 truncate" title={photo.file.name}>{photo.file.name}</p>
-              <p className="text-xs text-gray-400 dark:text-gray-500">{photo.width} × {photo.height}</p>
+              <div className="flex items-center justify-between">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate" title={photo.file.name}>{photo.file.name}</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500">{photo.width} × {photo.height}</p>
+                </div>
+                {isProcessed && photo.paddedDataUrl && (
+                  <div className="flex items-center gap-1 ml-2 shrink-0">
+                    <button
+                      onClick={() => handleCopy(photo.id, photo.paddedDataUrl!)}
+                      title="Copy to clipboard"
+                      className="p-1.5 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950 transition-colors"
+                    >
+                      {copiedId === photo.id ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                    </button>
+                    <button
+                      onClick={() => downloadDataUrl(photo.paddedDataUrl!, filename)}
+                      title="Download"
+                      className="p-1.5 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950 transition-colors"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Action overlay */}
             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
               {isProcessed && photo.paddedDataUrl && (
-                <>
-                  <button
-                    onClick={() => togglePreview(photo.id)}
-                    title={viewingOriginal ? 'Show padded' : 'Show original'}
-                    className="p-2 bg-white rounded-full text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors shadow"
-                  >
-                    {viewingOriginal ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                  </button>
-                  <button
-                    onClick={() => downloadDataUrl(photo.paddedDataUrl!, filename)}
-                    title="Download"
-                    className="p-2 bg-white rounded-full text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors shadow"
-                  >
-                    <Download className="w-4 h-4" />
-                  </button>
-                </>
+                <button
+                  onClick={() => togglePreview(photo.id)}
+                  title={viewingOriginal ? 'Show padded' : 'Show original'}
+                  className="p-2 bg-white rounded-full text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors shadow"
+                >
+                  {viewingOriginal ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                </button>
               )}
               <button
                 onClick={() => onRemove(photo.id)}
