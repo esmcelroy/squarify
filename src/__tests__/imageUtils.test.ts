@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { findMaxAspectRatio, getImageDimensions, padImageToAspectRatio } from '../lib/imageUtils'
-import type { UploadedPhoto, PaddingSettings } from '../types'
+import { findMaxAspectRatio, getImageDimensions, padImageToAspectRatio, drawPatternFill, drawWatermark, getWatermarkPosition } from '../lib/imageUtils'
+import type { UploadedPhoto, PaddingSettings, PatternSettings, WatermarkSettings, WatermarkPosition } from '../types'
 
 function makePhoto(width: number, height: number, overrides?: Partial<UploadedPhoto>): UploadedPhoto {
   return {
@@ -485,5 +485,343 @@ describe('drawBackgroundImage', () => {
     // Falls through to the else branch (color fill)
     expect(mockCtx.fillRect).toHaveBeenCalled()
     expect(result).toContain('data:image/png')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// getWatermarkPosition
+// ---------------------------------------------------------------------------
+
+describe('getWatermarkPosition', () => {
+  const canvasWidth = 1000
+  const canvasHeight = 800
+  const textWidth = 100
+  const textHeight = 24
+  const padding = 20
+
+  it('returns top-left position', () => {
+    const { x, y } = getWatermarkPosition('top-left', canvasWidth, canvasHeight, textWidth, textHeight, padding)
+    expect(x).toBe(padding)
+    expect(y).toBe(textHeight + padding)
+  })
+
+  it('returns top-center position', () => {
+    const { x, y } = getWatermarkPosition('top-center', canvasWidth, canvasHeight, textWidth, textHeight, padding)
+    expect(x).toBe((canvasWidth - textWidth) / 2)
+    expect(y).toBe(textHeight + padding)
+  })
+
+  it('returns top-right position', () => {
+    const { x, y } = getWatermarkPosition('top-right', canvasWidth, canvasHeight, textWidth, textHeight, padding)
+    expect(x).toBe(canvasWidth - textWidth - padding)
+    expect(y).toBe(textHeight + padding)
+  })
+
+  it('returns center position', () => {
+    const { x, y } = getWatermarkPosition('center', canvasWidth, canvasHeight, textWidth, textHeight, padding)
+    expect(x).toBe((canvasWidth - textWidth) / 2)
+    expect(y).toBe((canvasHeight + textHeight) / 2)
+  })
+
+  it('returns bottom-left position', () => {
+    const { x, y } = getWatermarkPosition('bottom-left', canvasWidth, canvasHeight, textWidth, textHeight, padding)
+    expect(x).toBe(padding)
+    expect(y).toBe(canvasHeight - padding)
+  })
+
+  it('returns bottom-center position', () => {
+    const { x, y } = getWatermarkPosition('bottom-center', canvasWidth, canvasHeight, textWidth, textHeight, padding)
+    expect(x).toBe((canvasWidth - textWidth) / 2)
+    expect(y).toBe(canvasHeight - padding)
+  })
+
+  it('returns bottom-right position', () => {
+    const { x, y } = getWatermarkPosition('bottom-right', canvasWidth, canvasHeight, textWidth, textHeight, padding)
+    expect(x).toBe(canvasWidth - textWidth - padding)
+    expect(y).toBe(canvasHeight - padding)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// drawPatternFill
+// ---------------------------------------------------------------------------
+
+describe('drawPatternFill', () => {
+  beforeEach(() => installCanvasMocks())
+  afterEach(restoreMocks)
+
+  const basePattern = (type: PatternSettings['type']): PatternSettings => ({
+    type,
+    color1: '#ffffff',
+    color2: '#000000',
+    scale: 1,
+  })
+
+  it('fills background with color1 for dots pattern', () => {
+    const beginPath = vi.fn()
+    const arc = vi.fn()
+    const fill = vi.fn()
+    Object.assign(mockCtx, { beginPath, arc, fill })
+
+    drawPatternFill(mockCtx, 100, 100, basePattern('dots'))
+    expect(mockCtx.fillRect).toHaveBeenCalledWith(0, 0, 100, 100)
+  })
+
+  it('draws dots using arc calls', () => {
+    const beginPath = vi.fn()
+    const arc = vi.fn()
+    const fill = vi.fn()
+    Object.assign(mockCtx, { beginPath, arc, fill })
+
+    drawPatternFill(mockCtx, 100, 100, basePattern('dots'))
+    expect(beginPath).toHaveBeenCalled()
+    expect(arc).toHaveBeenCalled()
+    expect(fill).toHaveBeenCalled()
+  })
+
+  it('draws stripes using fillRect', () => {
+    drawPatternFill(mockCtx, 100, 100, basePattern('stripes'))
+    // Background fill + at least one stripe fill
+    expect((mockCtx.fillRect as ReturnType<typeof vi.fn>).mock.calls.length).toBeGreaterThan(1)
+  })
+
+  it('draws checkerboard using fillRect for alternating cells', () => {
+    drawPatternFill(mockCtx, 60, 60, basePattern('checkerboard'))
+    // Background + alternating cell fills
+    expect((mockCtx.fillRect as ReturnType<typeof vi.fn>).mock.calls.length).toBeGreaterThan(1)
+  })
+
+  it('draws diagonal-lines using stroke', () => {
+    const beginPath = vi.fn()
+    const moveTo = vi.fn()
+    const lineTo = vi.fn()
+    const stroke = vi.fn()
+    Object.assign(mockCtx, { beginPath, moveTo, lineTo, stroke, strokeStyle: '', lineWidth: 0 })
+
+    drawPatternFill(mockCtx, 100, 100, basePattern('diagonal-lines'))
+    expect(mockCtx.save).toHaveBeenCalled()
+    expect(mockCtx.restore).toHaveBeenCalled()
+    expect(beginPath).toHaveBeenCalled()
+    expect(moveTo).toHaveBeenCalled()
+    expect(lineTo).toHaveBeenCalled()
+    expect(stroke).toHaveBeenCalled()
+  })
+
+  it('respects scale parameter', () => {
+    const largeScale = basePattern('stripes')
+    largeScale.scale = 3
+    drawPatternFill(mockCtx, 200, 200, largeScale)
+
+    const smallScale = basePattern('stripes')
+    smallScale.scale = 0.5
+    const mockCtx2 = createMockCtx()
+    HTMLCanvasElement.prototype.getContext = vi.fn(() => mockCtx2) as unknown as typeof HTMLCanvasElement.prototype.getContext
+    drawPatternFill(mockCtx2, 200, 200, smallScale)
+
+    // Larger scale = fewer stripes = fewer fillRect calls
+    const largeCalls = (mockCtx.fillRect as ReturnType<typeof vi.fn>).mock.calls.length
+    const smallCalls = (mockCtx2.fillRect as ReturnType<typeof vi.fn>).mock.calls.length
+    expect(smallCalls).toBeGreaterThan(largeCalls)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// drawWatermark
+// ---------------------------------------------------------------------------
+
+describe('drawWatermark', () => {
+  beforeEach(() => installCanvasMocks())
+  afterEach(restoreMocks)
+
+  const baseWatermark = (overrides: Partial<WatermarkSettings> = {}): WatermarkSettings => ({
+    enabled: true,
+    text: 'Test Watermark',
+    fontSize: 24,
+    color: '#ff0000',
+    opacity: 0.5,
+    position: 'bottom-right',
+    ...overrides,
+  })
+
+  it('draws text with correct styling', () => {
+    const fillText = vi.fn()
+    const measureText = vi.fn(() => ({ width: 100 }))
+    Object.assign(mockCtx, { fillText, measureText, font: '', globalAlpha: 1 })
+
+    drawWatermark(mockCtx, 500, 400, baseWatermark())
+
+    expect(mockCtx.save).toHaveBeenCalled()
+    expect(mockCtx.restore).toHaveBeenCalled()
+    expect(fillText).toHaveBeenCalled()
+  })
+
+  it('sets globalAlpha to watermark opacity', () => {
+    const fillText = vi.fn()
+    const measureText = vi.fn(() => ({ width: 100 }))
+    Object.assign(mockCtx, { fillText, measureText, font: '', globalAlpha: 1 })
+
+    drawWatermark(mockCtx, 500, 400, baseWatermark({ opacity: 0.3 }))
+
+    expect(mockCtx.globalAlpha).toBe(0.3)
+  })
+
+  it('does not draw when text is empty', () => {
+    const fillText = vi.fn()
+    const measureText = vi.fn(() => ({ width: 0 }))
+    Object.assign(mockCtx, { fillText, measureText, font: '', globalAlpha: 1 })
+
+    drawWatermark(mockCtx, 500, 400, baseWatermark({ text: '' }))
+    expect(fillText).not.toHaveBeenCalled()
+  })
+
+  it('does not draw when text is whitespace only', () => {
+    const fillText = vi.fn()
+    const measureText = vi.fn(() => ({ width: 0 }))
+    Object.assign(mockCtx, { fillText, measureText, font: '', globalAlpha: 1 })
+
+    drawWatermark(mockCtx, 500, 400, baseWatermark({ text: '   ' }))
+    expect(fillText).not.toHaveBeenCalled()
+  })
+
+  it('sets font with correct fontSize', () => {
+    const fillText = vi.fn()
+    const measureText = vi.fn(() => ({ width: 100 }))
+    Object.assign(mockCtx, { fillText, measureText, font: '', globalAlpha: 1 })
+
+    drawWatermark(mockCtx, 500, 400, baseWatermark({ fontSize: 36 }))
+    expect(mockCtx.font).toBe('36px sans-serif')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Shadow drawing in padImageToAspectRatio
+// ---------------------------------------------------------------------------
+
+describe('padImageToAspectRatio with shadow', () => {
+  beforeEach(() => {
+    installCanvasMocks()
+    installImageMock(800, 600)
+  })
+  afterEach(restoreMocks)
+
+  it('draws shadow when shadow settings are enabled', async () => {
+    const photo = makePhoto(600, 600, { dataUrl: 'data:img' })
+    const settings = defaultSettings({
+      shadow: { enabled: true, color: '#000000', blur: 20, offsetX: 5, offsetY: 5 },
+    })
+    await padImageToAspectRatio(photo, 2, settings)
+
+    expect(mockCtx.save).toHaveBeenCalled()
+    expect(mockCtx.restore).toHaveBeenCalled()
+    // Shadow fillRect + background fillRect
+    expect((mockCtx.fillRect as ReturnType<typeof vi.fn>).mock.calls.length).toBeGreaterThanOrEqual(2)
+  })
+
+  it('sets shadow properties on context', async () => {
+    const photo = makePhoto(600, 600, { dataUrl: 'data:img' })
+    const settings = defaultSettings({
+      shadow: { enabled: true, color: '#333333', blur: 15, offsetX: 3, offsetY: 7 },
+    })
+    await padImageToAspectRatio(photo, 2, settings)
+
+    expect(mockCtx.shadowColor).toBe('#333333')
+    expect(mockCtx.shadowBlur).toBe(15)
+    expect(mockCtx.shadowOffsetX).toBe(3)
+    expect(mockCtx.shadowOffsetY).toBe(7)
+  })
+
+  it('does not draw shadow when shadow is disabled', async () => {
+    const photo = makePhoto(600, 600, { dataUrl: 'data:img' })
+    const settings = defaultSettings({
+      shadow: { enabled: false, color: '#000000', blur: 20, offsetX: 0, offsetY: 0 },
+    })
+    await padImageToAspectRatio(photo, 2, settings)
+
+    // Only 1 fillRect for background, no shadow fillRect
+    expect((mockCtx.fillRect as ReturnType<typeof vi.fn>).mock.calls.length).toBe(1)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Pattern fill in padImageToAspectRatio
+// ---------------------------------------------------------------------------
+
+describe('padImageToAspectRatio with pattern fill', () => {
+  beforeEach(() => {
+    installCanvasMocks()
+    installImageMock(800, 600)
+  })
+  afterEach(restoreMocks)
+
+  it('uses pattern fill when fillType is pattern', async () => {
+    const photo = makePhoto(600, 600, { dataUrl: 'data:img' })
+    const settings = defaultSettings({
+      fillType: 'pattern',
+      pattern: { type: 'dots', color1: '#fff', color2: '#000', scale: 1 },
+    })
+
+    const beginPath = vi.fn()
+    const arc = vi.fn()
+    const fill = vi.fn()
+    Object.assign(mockCtx, { beginPath, arc, fill })
+
+    await padImageToAspectRatio(photo, 2, settings)
+
+    // Pattern fill path was taken - dots use arc
+    expect(beginPath).toHaveBeenCalled()
+    expect(arc).toHaveBeenCalled()
+  })
+
+  it('uses stripes pattern in padImageToAspectRatio', async () => {
+    const photo = makePhoto(600, 600, { dataUrl: 'data:img' })
+    const settings = defaultSettings({
+      fillType: 'pattern',
+      pattern: { type: 'stripes', color1: '#fff', color2: '#ccc', scale: 1 },
+    })
+
+    await padImageToAspectRatio(photo, 2, settings)
+
+    // Multiple fillRect calls: background + stripes + foreground shadow rect (if any)
+    expect((mockCtx.fillRect as ReturnType<typeof vi.fn>).mock.calls.length).toBeGreaterThan(1)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Watermark in padImageToAspectRatio
+// ---------------------------------------------------------------------------
+
+describe('padImageToAspectRatio with watermark', () => {
+  beforeEach(() => {
+    installCanvasMocks()
+    installImageMock(800, 600)
+  })
+  afterEach(restoreMocks)
+
+  it('draws watermark when enabled with text', async () => {
+    const fillText = vi.fn()
+    const measureText = vi.fn(() => ({ width: 100 }))
+    Object.assign(mockCtx, { fillText, measureText, font: '', globalAlpha: 1 })
+
+    const photo = makePhoto(600, 600, { dataUrl: 'data:img' })
+    const settings = defaultSettings({
+      watermark: { enabled: true, text: 'My Watermark', fontSize: 24, color: '#fff', opacity: 0.5, position: 'bottom-right' },
+    })
+
+    await padImageToAspectRatio(photo, 2, settings)
+    expect(fillText).toHaveBeenCalled()
+  })
+
+  it('does not draw watermark when disabled', async () => {
+    const fillText = vi.fn()
+    const measureText = vi.fn(() => ({ width: 100 }))
+    Object.assign(mockCtx, { fillText, measureText, font: '', globalAlpha: 1 })
+
+    const photo = makePhoto(600, 600, { dataUrl: 'data:img' })
+    const settings = defaultSettings({
+      watermark: { enabled: false, text: 'My Watermark', fontSize: 24, color: '#fff', opacity: 0.5, position: 'bottom-right' },
+    })
+
+    await padImageToAspectRatio(photo, 2, settings)
+    expect(fillText).not.toHaveBeenCalled()
   })
 })

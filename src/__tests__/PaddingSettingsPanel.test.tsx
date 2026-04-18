@@ -20,6 +20,9 @@ const defaultSettings: PaddingSettings = {
   gradientColorStart: '#ffffff',
   gradientColorEnd: '#000000',
   blurAmount: 40,
+  watermark: { enabled: false, text: '', fontSize: 48, color: '#ffffff', opacity: 0.5, position: 'bottom-right' as const },
+  shadow: { enabled: false, color: '#000000', blur: 20, offsetX: 0, offsetY: 4 },
+  pattern: { type: 'dots' as const, color1: '#ffffff', color2: '#e5e7eb', scale: 2 },
 };
 
 function renderPanel(overrides: Partial<Parameters<typeof PaddingSettingsPanel>[0]> = {}) {
@@ -377,5 +380,419 @@ describe('PaddingSettingsPanel', () => {
     });
     expect(screen.getByText('Change image')).toBeInTheDocument();
     expect(screen.getByAltText('Background')).toBeInTheDocument();
+  });
+
+  // --- 5 fill type buttons ---
+  it('renders all 5 fill type buttons including Pattern', () => {
+    renderPanel();
+    expect(screen.getAllByText('Color')[0]).toBeInTheDocument();
+    expect(screen.getAllByText('Image')[0]).toBeInTheDocument();
+    expect(screen.getByText('Gradient')).toBeInTheDocument();
+    expect(screen.getByText('Blur')).toBeInTheDocument();
+    expect(screen.getByText('Pattern')).toBeInTheDocument();
+  });
+
+  it('switches to Pattern fill type', async () => {
+    const user = userEvent.setup();
+    const { onChange } = renderPanel();
+    await user.click(screen.getByText('Pattern'));
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ fillType: 'pattern' }));
+  });
+
+  // --- Pattern fill UI ---
+  it('shows pattern type buttons when fillType is pattern', () => {
+    renderPanel({
+      settings: { ...defaultSettings, fillType: 'pattern' },
+    });
+    expect(screen.getByText('dots')).toBeInTheDocument();
+    expect(screen.getByText('stripes')).toBeInTheDocument();
+    expect(screen.getByText('checkerboard')).toBeInTheDocument();
+    expect(screen.getByText('diagonal lines')).toBeInTheDocument();
+  });
+
+  it('clicking pattern type buttons calls onChange with updated pattern', async () => {
+    const user = userEvent.setup();
+    const { onChange } = renderPanel({
+      settings: { ...defaultSettings, fillType: 'pattern' },
+    });
+
+    await user.click(screen.getByText('stripes'));
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+      pattern: expect.objectContaining({ type: 'stripes' }),
+    }));
+
+    onChange.mockClear();
+    await user.click(screen.getByText('checkerboard'));
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+      pattern: expect.objectContaining({ type: 'checkerboard' }),
+    }));
+
+    onChange.mockClear();
+    await user.click(screen.getByText('diagonal lines'));
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+      pattern: expect.objectContaining({ type: 'diagonal-lines' }),
+    }));
+  });
+
+  it('shows pattern color pickers and changing them calls onChange', () => {
+    const { onChange } = renderPanel({
+      settings: { ...defaultSettings, fillType: 'pattern' },
+    });
+
+    const color1 = screen.getByLabelText('Pattern color 1');
+    expect(color1).toBeInTheDocument();
+    fireEvent.change(color1, { target: { value: '#ff0000' } });
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+      pattern: expect.objectContaining({ color1: '#ff0000' }),
+    }));
+
+    onChange.mockClear();
+    const color2 = screen.getByLabelText('Pattern color 2');
+    expect(color2).toBeInTheDocument();
+    fireEvent.change(color2, { target: { value: '#00ff00' } });
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+      pattern: expect.objectContaining({ color2: '#00ff00' }),
+    }));
+  });
+
+  it('shows pattern scale slider and changing it calls onChange', () => {
+    const { onChange } = renderPanel({
+      settings: { ...defaultSettings, fillType: 'pattern' },
+    });
+
+    const slider = screen.getByRole('slider', { name: 'Pattern scale' });
+    expect(slider).toBeInTheDocument();
+    fireEvent.change(slider, { target: { value: '5' } });
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+      pattern: expect.objectContaining({ scale: 5 }),
+    }));
+  });
+
+  // --- Watermark section ---
+  it('shows watermark toggle button', () => {
+    renderPanel();
+    expect(screen.getByText('Watermark')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Toggle watermark' })).toBeInTheDocument();
+  });
+
+  it('toggling watermark calls onChange with enabled true', async () => {
+    const user = userEvent.setup();
+    const { onChange } = renderPanel();
+    await user.click(screen.getByRole('button', { name: 'Toggle watermark' }));
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+      watermark: expect.objectContaining({ enabled: true }),
+    }));
+  });
+
+  it('shows watermark controls when enabled', () => {
+    renderPanel({
+      settings: {
+        ...defaultSettings,
+        watermark: { ...defaultSettings.watermark, enabled: true },
+      },
+    });
+    expect(screen.getByLabelText('Watermark text')).toBeInTheDocument();
+    expect(screen.getByRole('slider', { name: 'Watermark font size' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Watermark color')).toBeInTheDocument();
+    expect(screen.getByRole('slider', { name: 'Watermark opacity' })).toBeInTheDocument();
+  });
+
+  it('does not show watermark controls when disabled', () => {
+    renderPanel();
+    expect(screen.queryByLabelText('Watermark text')).not.toBeInTheDocument();
+    expect(screen.queryByRole('slider', { name: 'Watermark font size' })).not.toBeInTheDocument();
+  });
+
+  it('changing watermark text calls onChange', async () => {
+    const user = userEvent.setup();
+    const { onChange } = renderPanel({
+      settings: {
+        ...defaultSettings,
+        watermark: { ...defaultSettings.watermark, enabled: true },
+      },
+    });
+    const input = screen.getByLabelText('Watermark text');
+    await user.type(input, 'hello');
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+      watermark: expect.objectContaining({ text: expect.any(String) }),
+    }));
+  });
+
+  it('changing watermark font size slider calls onChange', () => {
+    const { onChange } = renderPanel({
+      settings: {
+        ...defaultSettings,
+        watermark: { ...defaultSettings.watermark, enabled: true },
+      },
+    });
+    const slider = screen.getByRole('slider', { name: 'Watermark font size' });
+    fireEvent.change(slider, { target: { value: '72' } });
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+      watermark: expect.objectContaining({ fontSize: 72 }),
+    }));
+  });
+
+  it('changing watermark opacity slider calls onChange', () => {
+    const { onChange } = renderPanel({
+      settings: {
+        ...defaultSettings,
+        watermark: { ...defaultSettings.watermark, enabled: true },
+      },
+    });
+    const slider = screen.getByRole('slider', { name: 'Watermark opacity' });
+    fireEvent.change(slider, { target: { value: '0.8' } });
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+      watermark: expect.objectContaining({ opacity: 0.8 }),
+    }));
+  });
+
+  it('changing watermark color calls onChange', () => {
+    const { onChange } = renderPanel({
+      settings: {
+        ...defaultSettings,
+        watermark: { ...defaultSettings.watermark, enabled: true },
+      },
+    });
+    const colorInput = screen.getByLabelText('Watermark color');
+    fireEvent.change(colorInput, { target: { value: '#ff0000' } });
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+      watermark: expect.objectContaining({ color: '#ff0000' }),
+    }));
+  });
+
+  it('shows 6 watermark position buttons and clicking one calls onChange', async () => {
+    const user = userEvent.setup();
+    const { onChange } = renderPanel({
+      settings: {
+        ...defaultSettings,
+        watermark: { ...defaultSettings.watermark, enabled: true },
+      },
+    });
+    expect(screen.getByText('top left')).toBeInTheDocument();
+    expect(screen.getByText('top center')).toBeInTheDocument();
+    expect(screen.getByText('top right')).toBeInTheDocument();
+    expect(screen.getByText('bottom left')).toBeInTheDocument();
+    expect(screen.getByText('bottom center')).toBeInTheDocument();
+    expect(screen.getByText('bottom right')).toBeInTheDocument();
+
+    await user.click(screen.getByText('top left'));
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+      watermark: expect.objectContaining({ position: 'top-left' }),
+    }));
+  });
+
+  // --- Shadow section ---
+  it('shows shadow toggle button', () => {
+    renderPanel();
+    expect(screen.getByText('Drop Shadow')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Toggle drop shadow' })).toBeInTheDocument();
+  });
+
+  it('toggling shadow calls onChange with enabled true', async () => {
+    const user = userEvent.setup();
+    const { onChange } = renderPanel();
+    await user.click(screen.getByRole('button', { name: 'Toggle drop shadow' }));
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+      shadow: expect.objectContaining({ enabled: true }),
+    }));
+  });
+
+  it('shows shadow controls when enabled', () => {
+    renderPanel({
+      settings: {
+        ...defaultSettings,
+        shadow: { ...defaultSettings.shadow, enabled: true },
+      },
+    });
+    expect(screen.getByLabelText('Shadow color')).toBeInTheDocument();
+    expect(screen.getByRole('slider', { name: 'Shadow blur' })).toBeInTheDocument();
+    expect(screen.getByRole('slider', { name: 'Shadow offset X' })).toBeInTheDocument();
+    expect(screen.getByRole('slider', { name: 'Shadow offset Y' })).toBeInTheDocument();
+  });
+
+  it('does not show shadow controls when disabled', () => {
+    renderPanel();
+    expect(screen.queryByLabelText('Shadow color')).not.toBeInTheDocument();
+    expect(screen.queryByRole('slider', { name: 'Shadow blur' })).not.toBeInTheDocument();
+  });
+
+  it('changing shadow color calls onChange', () => {
+    const { onChange } = renderPanel({
+      settings: {
+        ...defaultSettings,
+        shadow: { ...defaultSettings.shadow, enabled: true },
+      },
+    });
+    fireEvent.change(screen.getByLabelText('Shadow color'), { target: { value: '#333333' } });
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+      shadow: expect.objectContaining({ color: '#333333' }),
+    }));
+  });
+
+  it('changing shadow blur slider calls onChange', () => {
+    const { onChange } = renderPanel({
+      settings: {
+        ...defaultSettings,
+        shadow: { ...defaultSettings.shadow, enabled: true },
+      },
+    });
+    fireEvent.change(screen.getByRole('slider', { name: 'Shadow blur' }), { target: { value: '30' } });
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+      shadow: expect.objectContaining({ blur: 30 }),
+    }));
+  });
+
+  it('changing shadow offsetX slider calls onChange', () => {
+    const { onChange } = renderPanel({
+      settings: {
+        ...defaultSettings,
+        shadow: { ...defaultSettings.shadow, enabled: true },
+      },
+    });
+    fireEvent.change(screen.getByRole('slider', { name: 'Shadow offset X' }), { target: { value: '10' } });
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+      shadow: expect.objectContaining({ offsetX: 10 }),
+    }));
+  });
+
+  it('changing shadow offsetY slider calls onChange', () => {
+    const { onChange } = renderPanel({
+      settings: {
+        ...defaultSettings,
+        shadow: { ...defaultSettings.shadow, enabled: true },
+      },
+    });
+    fireEvent.change(screen.getByRole('slider', { name: 'Shadow offset Y' }), { target: { value: '-5' } });
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+      shadow: expect.objectContaining({ offsetY: -5 }),
+    }));
+  });
+
+  // --- Eyedropper button ---
+  it('shows eyedropper button when EyeDropper API is available', () => {
+    // Mock the EyeDropper API
+    const origEyeDropper = (window as Record<string, unknown>).EyeDropper;
+    (window as Record<string, unknown>).EyeDropper = class { open() { return Promise.resolve({ sRGBHex: '#000000' }); } };
+
+    renderPanel({ settings: { ...defaultSettings, fillType: 'color' } });
+    expect(screen.getByRole('button', { name: 'Pick color from screen' })).toBeInTheDocument();
+
+    // Cleanup
+    if (origEyeDropper) {
+      (window as Record<string, unknown>).EyeDropper = origEyeDropper;
+    } else {
+      delete (window as Record<string, unknown>).EyeDropper;
+    }
+  });
+
+  it('does not show eyedropper button when EyeDropper API is unavailable', () => {
+    const origEyeDropper = (window as Record<string, unknown>).EyeDropper;
+    delete (window as Record<string, unknown>).EyeDropper;
+
+    renderPanel({ settings: { ...defaultSettings, fillType: 'color' } });
+    expect(screen.queryByRole('button', { name: 'Pick color from screen' })).not.toBeInTheDocument();
+
+    if (origEyeDropper) {
+      (window as Record<string, unknown>).EyeDropper = origEyeDropper;
+    }
+  });
+
+  // --- Social media presets ---
+  it('shows social media preset buttons', () => {
+    renderPanel();
+    expect(screen.getByText('Social Media Presets')).toBeInTheDocument();
+    expect(screen.getByText('IG Post')).toBeInTheDocument();
+    expect(screen.getByText('IG Story')).toBeInTheDocument();
+    expect(screen.getByText('Facebook')).toBeInTheDocument();
+    expect(screen.getByText('X / Twitter')).toBeInTheDocument();
+    expect(screen.getByText('LinkedIn')).toBeInTheDocument();
+    expect(screen.getByText('YouTube')).toBeInTheDocument();
+  });
+
+  it('clicking IG Post sets custom ratio 1:1 and maxDimension 1080', async () => {
+    const user = userEvent.setup();
+    const { onChange } = renderPanel();
+    await user.click(screen.getByText('IG Post'));
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+      aspectRatio: 'custom',
+      customRatioWidth: 1,
+      customRatioHeight: 1,
+      maxDimension: 1080,
+    }));
+  });
+
+  it('clicking IG Story sets custom ratio 9:16 and maxDimension 1080', async () => {
+    const user = userEvent.setup();
+    const { onChange } = renderPanel();
+    await user.click(screen.getByText('IG Story'));
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+      aspectRatio: 'custom',
+      customRatioWidth: 9,
+      customRatioHeight: 16,
+      maxDimension: 1080,
+    }));
+  });
+
+  it('clicking Facebook sets custom ratio and maxDimension 1200', async () => {
+    const user = userEvent.setup();
+    const { onChange } = renderPanel();
+    await user.click(screen.getByText('Facebook'));
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+      aspectRatio: 'custom',
+      customRatioWidth: 1200,
+      customRatioHeight: 630,
+      maxDimension: 1200,
+    }));
+  });
+
+  it('clicking X / Twitter sets custom ratio 16:9 and maxDimension 1200', async () => {
+    const user = userEvent.setup();
+    const { onChange } = renderPanel();
+    await user.click(screen.getByText('X / Twitter'));
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+      aspectRatio: 'custom',
+      customRatioWidth: 16,
+      customRatioHeight: 9,
+      maxDimension: 1200,
+    }));
+  });
+
+  it('clicking LinkedIn sets custom ratio and maxDimension 1200', async () => {
+    const user = userEvent.setup();
+    const { onChange } = renderPanel();
+    await user.click(screen.getByText('LinkedIn'));
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+      aspectRatio: 'custom',
+      customRatioWidth: 1200,
+      customRatioHeight: 627,
+      maxDimension: 1200,
+    }));
+  });
+
+  it('clicking YouTube sets custom ratio 16:9 and maxDimension 1280', async () => {
+    const user = userEvent.setup();
+    const { onChange } = renderPanel();
+    await user.click(screen.getByText('YouTube'));
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+      aspectRatio: 'custom',
+      customRatioWidth: 16,
+      customRatioHeight: 9,
+      maxDimension: 1280,
+    }));
+  });
+
+  // --- Backward compatibility with missing settings ---
+  it('handles settings without watermark/shadow/pattern using defaults', () => {
+    const settingsWithoutNew = {
+      ...defaultSettings,
+      watermark: undefined,
+      shadow: undefined,
+      pattern: undefined,
+    } as unknown as PaddingSettings;
+
+    // Should render without errors
+    renderPanel({ settings: settingsWithoutNew });
+    expect(screen.getByText('Watermark')).toBeInTheDocument();
+    expect(screen.getByText('Drop Shadow')).toBeInTheDocument();
   });
 });

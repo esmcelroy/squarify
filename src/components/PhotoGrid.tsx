@@ -132,6 +132,7 @@ export function PhotoGrid({ photos, maxAspectRatio, onRemove, isProcessed, outpu
                   <div className="flex items-center gap-1 ml-2 shrink-0">
                     <button
                       onClick={() => handleCopy(photo.id, photo.paddedDataUrl!)}
+                      aria-label="Copy to clipboard"
                       title="Copy to clipboard"
                       className="p-1.5 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950 transition-colors"
                     >
@@ -140,6 +141,7 @@ export function PhotoGrid({ photos, maxAspectRatio, onRemove, isProcessed, outpu
                     {supportsShare && (
                       <button
                         onClick={() => shareImage(photo.paddedDataUrl!, filename)}
+                        aria-label="Share image"
                         title="Share"
                         className="p-1.5 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950 transition-colors"
                       >
@@ -148,6 +150,7 @@ export function PhotoGrid({ photos, maxAspectRatio, onRemove, isProcessed, outpu
                     )}
                     <button
                       onClick={() => downloadDataUrl(photo.paddedDataUrl!, filename)}
+                      aria-label="Download image"
                       title="Download"
                       className="p-1.5 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950 transition-colors"
                     >
@@ -163,6 +166,7 @@ export function PhotoGrid({ photos, maxAspectRatio, onRemove, isProcessed, outpu
               {isProcessed && photo.paddedDataUrl && (
                 <button
                   onClick={() => togglePreview(photo.id)}
+                  aria-label={viewingOriginal ? 'Show padded version' : 'Show original version'}
                   title={viewingOriginal ? 'Show padded' : 'Show original'}
                   className="p-2 bg-white rounded-full text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors shadow"
                 >
@@ -171,6 +175,7 @@ export function PhotoGrid({ photos, maxAspectRatio, onRemove, isProcessed, outpu
               )}
               <button
                 onClick={() => onRemove(photo.id)}
+                aria-label={`Remove ${photo.file.name}`}
                 title="Remove"
                 className="p-2 bg-white rounded-full text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors shadow"
               >

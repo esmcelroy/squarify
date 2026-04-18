@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Info, Upload, Sliders, Wand2, Download, X } from 'lucide-react';
 
 function GitHubIcon({ className }: { className?: string }) {
@@ -11,6 +11,55 @@ function GitHubIcon({ className }: { className?: string }) {
 
 export function AppFooter() {
   const [aboutOpen, setAboutOpen] = useState(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+
+  const closeDialog = useCallback(() => {
+    setAboutOpen(false);
+    triggerRef.current?.focus();
+  }, []);
+
+  // Focus trap and Escape key handler
+  useEffect(() => {
+    if (!aboutOpen) return;
+
+    // Focus the dialog on open
+    const dialog = dialogRef.current;
+    if (dialog) {
+      const closeBtn = dialog.querySelector<HTMLElement>('[aria-label="Close about dialog"]');
+      closeBtn?.focus();
+    }
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        closeDialog();
+        return;
+      }
+
+      if (e.key === 'Tab' && dialog) {
+        const focusable = dialog.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            e.preventDefault();
+            last?.focus();
+          }
+        } else {
+          if (document.activeElement === last) {
+            e.preventDefault();
+            first?.focus();
+          }
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [aboutOpen, closeDialog]);
 
   return (
     <>
@@ -21,6 +70,7 @@ export function AppFooter() {
           </p>
           <div className="flex items-center gap-4">
             <button
+              ref={triggerRef}
               onClick={() => setAboutOpen(true)}
               className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
             >
@@ -42,14 +92,15 @@ export function AppFooter() {
 
       {/* About modal */}
       {aboutOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setAboutOpen(false)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={closeDialog} role="dialog" aria-modal="true" aria-label="About Squarify">
           <div
+            ref={dialogRef}
             className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl max-w-lg w-full p-6 space-y-4"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">About Squarify</h2>
-              <button onClick={() => setAboutOpen(false)} className="p-1 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors" aria-label="Close about dialog">
+              <button onClick={closeDialog} className="p-1 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors" aria-label="Close about dialog">
                 <X className="w-5 h-5" />
               </button>
             </div>

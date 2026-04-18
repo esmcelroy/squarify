@@ -174,6 +174,8 @@ export default function App() {
               <button
                 key={value}
                 onClick={() => setTheme(value)}
+                aria-label={`${label} theme`}
+                aria-pressed={theme === value}
                 title={label}
                 className={`p-1.5 rounded-md transition-colors ${
                   theme === value
@@ -198,7 +200,7 @@ export default function App() {
             {photos.length > 0 && (
               <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-2">
                 <span>{photos.length} photo{photos.length !== 1 ? 's' : ''} · Target: <span className="font-mono font-medium">{settings.aspectRatio === 'auto' ? `Auto (${maxAspectRatio.toFixed(3)})` : settings.aspectRatio}</span>{settings.borderPadding > 0 && ` · Border: ${settings.borderPadding}px`}</span>
-                <button onClick={handleClearAll} className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 transition-colors">
+                <button onClick={handleClearAll} className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 transition-colors" aria-label="Clear all photos">
                   <Trash2 className="w-3 h-3" /> Clear all
                 </button>
               </div>
@@ -211,7 +213,7 @@ export default function App() {
                   <span>Processing images…</span>
                   <span>{progress}%</span>
                 </div>
-                <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100} aria-label="Processing progress">
                   <div
                     className="h-full bg-indigo-500 rounded-full transition-all duration-200"
                     style={{ width: `${progress}%` }}
