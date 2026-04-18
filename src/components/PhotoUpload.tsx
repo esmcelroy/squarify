@@ -22,7 +22,6 @@ export function PhotoUpload({ onPhotosAdded, currentCount }: PhotoUploadProps) {
   const handleFiles = useCallback((files: File[]) => {
     const validFiles = files.filter(f => {
       if (ACCEPTED_TYPES.includes(f.type)) return true;
-      // HEIC files may have empty MIME type — check extension
       const ext = f.name.split('.').pop()?.toLowerCase();
       return ext === 'heic' || ext === 'heif';
     });
@@ -63,20 +62,20 @@ export function PhotoUpload({ onPhotosAdded, currentCount }: PhotoUploadProps) {
         onDragOver={onDragOver}
         onDragLeave={onDragLeave}
         className={`border-2 border-dashed rounded-xl p-10 text-center transition-colors cursor-pointer select-none
-          ${isFull ? 'border-gray-200 bg-gray-50 cursor-not-allowed opacity-60' :
-            isDragging ? 'border-indigo-400 bg-indigo-50' : 'border-gray-300 bg-gray-50 hover:border-indigo-400 hover:bg-indigo-50'}`}
+          ${isFull ? 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 cursor-not-allowed opacity-60' :
+            isDragging ? 'border-indigo-400 bg-indigo-50 dark:bg-indigo-950' : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 hover:border-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950'}`}
       >
         <div className="flex flex-col items-center gap-3">
           {isDragging ? (
             <ImagePlus className="w-10 h-10 text-indigo-500" />
           ) : (
-            <Upload className="w-10 h-10 text-gray-400" />
+            <Upload className="w-10 h-10 text-gray-400 dark:text-gray-500" />
           )}
           <div>
-            <p className="text-sm font-medium text-gray-700">
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
               {isFull ? 'Maximum photos reached' : 'Drop photos here or click to browse'}
             </p>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
               JPG, PNG, WebP, GIF, HEIC — up to {MAX_PHOTOS} photos ({currentCount}/{MAX_PHOTOS} added)
             </p>
           </div>
@@ -91,7 +90,7 @@ export function PhotoUpload({ onPhotosAdded, currentCount }: PhotoUploadProps) {
         />
       </div>
       {error && (
-        <div className="flex items-center gap-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-4 py-2">
+        <div className="flex items-center gap-2 text-sm text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg px-4 py-2">
           <AlertCircle className="w-4 h-4 shrink-0" />
           {error}
         </div>

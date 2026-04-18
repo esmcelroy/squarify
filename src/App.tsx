@@ -4,11 +4,12 @@ import { PhotoUpload } from './components/PhotoUpload';
 import { PaddingSettingsPanel } from './components/PaddingSettingsPanel';
 import { PhotoGrid } from './components/PhotoGrid';
 import { useLocalStorage } from './hooks/useLocalStorage';
+import { useDarkMode, type Theme } from './hooks/useDarkMode';
 import type { UploadedPhoto, PaddingSettings } from './types';
 import { ASPECT_RATIO_PRESETS } from './types';
 import { getImageDimensions, findMaxAspectRatio, padImageToAspectRatio } from './lib/imageUtils';
 import { processFilesForHeic } from './lib/heicUtils';
-import { Download, Trash2, Layers } from 'lucide-react';
+import { Download, Trash2, Layers, Sun, Moon, Monitor } from 'lucide-react';
 
 const DEFAULT_SETTINGS: PaddingSettings = {
   fillType: 'color',
@@ -43,6 +44,13 @@ export default function App() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isProcessed, setIsProcessed] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [theme, setTheme] = useDarkMode();
+
+  const THEME_OPTIONS: { value: Theme; icon: typeof Sun; label: string }[] = [
+    { value: 'light', icon: Sun, label: 'Light' },
+    { value: 'dark', icon: Moon, label: 'Dark' },
+    { value: 'system', icon: Monitor, label: 'System' },
+  ];
 
   const maxAspectRatio = findMaxAspectRatio(photos);
 
@@ -127,16 +135,33 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-4 py-4">
+      <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-4 py-4">
         <div className="max-w-6xl mx-auto flex items-center gap-3">
           <div className="bg-indigo-600 text-white rounded-xl p-2">
             <Layers className="w-5 h-5" />
           </div>
-          <div>
-            <h1 className="text-lg font-bold text-gray-900 leading-tight">Squarify</h1>
-            <p className="text-xs text-gray-500">Pad photos to a uniform aspect ratio</p>
+          <div className="flex-1">
+            <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100 leading-tight">Squarify</h1>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Pad photos to a uniform aspect ratio</p>
+          </div>
+          {/* Theme toggle */}
+          <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
+            {THEME_OPTIONS.map(({ value, icon: Icon, label }) => (
+              <button
+                key={value}
+                onClick={() => setTheme(value)}
+                title={label}
+                className={`p-1.5 rounded-md transition-colors ${
+                  theme === value
+                    ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                    : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+              </button>
+            ))}
           </div>
         </div>
       </header>
@@ -149,7 +174,7 @@ export default function App() {
 
             {/* Stats bar */}
             {photos.length > 0 && (
-              <div className="flex items-center justify-between text-sm text-gray-600 bg-white border border-gray-200 rounded-lg px-4 py-2">
+              <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-2">
                 <span>{photos.length} photo{photos.length !== 1 ? 's' : ''} · Target: <span className="font-mono font-medium">{settings.aspectRatio === 'auto' ? `Auto (${maxAspectRatio.toFixed(3)})` : settings.aspectRatio}</span>{settings.borderPadding > 0 && ` · Border: ${settings.borderPadding}px`}</span>
                 <button onClick={handleClearAll} className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 transition-colors">
                   <Trash2 className="w-3 h-3" /> Clear all
@@ -170,11 +195,11 @@ export default function App() {
         {/* Progress */}
         {isProcessing && (
           <div className="space-y-2">
-            <div className="flex justify-between text-xs text-gray-600">
+            <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400">
               <span>Processing images…</span>
               <span>{progress}%</span>
             </div>
-            <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
               <div
                 className="h-full bg-indigo-500 rounded-full transition-all duration-200"
                 style={{ width: `${progress}%` }}

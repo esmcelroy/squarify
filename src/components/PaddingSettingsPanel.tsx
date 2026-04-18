@@ -33,8 +33,8 @@ export function PaddingSettingsPanel({ settings, onChange, onProcess, isProcessi
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-5 max-h-[calc(100vh-120px)] overflow-y-auto">
-      <h2 className="font-semibold text-gray-800 text-base">Padding Settings</h2>
+    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-5 space-y-5 max-h-[calc(100vh-120px)] overflow-y-auto">
+      <h2 className="font-semibold text-gray-800 dark:text-gray-200 text-base">Padding Settings</h2>
 
       {/* Fill type selector */}
       <div className="grid grid-cols-4 gap-1.5">
@@ -45,7 +45,7 @@ export function PaddingSettingsPanel({ settings, onChange, onProcess, isProcessi
             className={`flex flex-col items-center gap-1 py-2 px-1 rounded-lg border text-xs font-medium transition-colors
               ${settings.fillType === value
                 ? 'bg-indigo-600 border-indigo-600 text-white'
-                : 'border-gray-200 text-gray-600 hover:border-indigo-300 hover:text-indigo-600'}`}
+                : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-indigo-300 hover:text-indigo-600'}`}
           >
             <Icon className="w-4 h-4" />
             {label}
@@ -56,13 +56,13 @@ export function PaddingSettingsPanel({ settings, onChange, onProcess, isProcessi
       {/* Color picker */}
       {settings.fillType === 'color' && (
         <div className="flex items-center gap-3">
-          <label className="text-sm text-gray-600 font-medium w-16 shrink-0">Color</label>
+          <label className="text-sm text-gray-600 dark:text-gray-400 font-medium w-16 shrink-0">Color</label>
           <div className="flex items-center gap-2 flex-1">
             <input
               type="color"
               value={settings.fillColor}
               onChange={e => update({ fillColor: e.target.value })}
-              className="h-9 w-14 rounded cursor-pointer border border-gray-200"
+              className="h-9 w-14 rounded cursor-pointer border border-gray-200 dark:border-gray-600"
             />
             <input
               type="text"
@@ -71,7 +71,7 @@ export function PaddingSettingsPanel({ settings, onChange, onProcess, isProcessi
                 const val = e.target.value;
                 if (/^#[0-9A-Fa-f]{0,6}$/.test(val)) update({ fillColor: val });
               }}
-              className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-300"
+              className="flex-1 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm font-mono bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-300"
               maxLength={7}
               placeholder="#ffffff"
             />
@@ -83,7 +83,7 @@ export function PaddingSettingsPanel({ settings, onChange, onProcess, isProcessi
       {settings.fillType === 'image' && (
         <div className="space-y-3">
           <div className="flex items-center gap-3">
-            <label className="text-sm text-gray-600 font-medium w-16 shrink-0">Image</label>
+            <label className="text-sm text-gray-600 dark:text-gray-400 font-medium w-16 shrink-0">Image</label>
             <div className="flex items-center gap-2 flex-1">
               {settings.fillImageDataUrl && (
                 <img
@@ -94,7 +94,7 @@ export function PaddingSettingsPanel({ settings, onChange, onProcess, isProcessi
               )}
               <button
                 onClick={() => bgImageInputRef.current?.click()}
-                className="flex-1 border border-dashed border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-500 hover:border-indigo-400 hover:text-indigo-500 transition-colors text-center"
+                className="flex-1 border border-dashed border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-500 dark:text-gray-400 hover:border-indigo-400 hover:text-indigo-500 transition-colors text-center"
               >
                 {settings.fillImageDataUrl ? 'Change image' : 'Upload image'}
               </button>
@@ -108,7 +108,7 @@ export function PaddingSettingsPanel({ settings, onChange, onProcess, isProcessi
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <label className="text-sm text-gray-600 font-medium w-16 shrink-0">Style</label>
+            <label className="text-sm text-gray-600 dark:text-gray-400 font-medium w-16 shrink-0">Style</label>
             <div className="flex gap-2 flex-1">
               {(['cover', 'contain', 'tile'] as const).map(style => (
                 <button
@@ -117,7 +117,7 @@ export function PaddingSettingsPanel({ settings, onChange, onProcess, isProcessi
                   className={`flex-1 py-1.5 rounded-lg border text-xs font-medium capitalize transition-colors
                     ${settings.fillImageStyle === style
                       ? 'bg-indigo-600 border-indigo-600 text-white'
-                      : 'border-gray-200 text-gray-600 hover:border-indigo-300'}`}
+                      : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-indigo-300'}`}
                 >
                   {style}
                 </button>
@@ -131,7 +131,7 @@ export function PaddingSettingsPanel({ settings, onChange, onProcess, isProcessi
       {settings.fillType === 'gradient' && (
         <div className="space-y-3">
           <div className="flex items-center gap-3">
-            <label className="text-sm text-gray-600 font-medium w-16 shrink-0">Direction</label>
+            <label className="text-sm text-gray-600 dark:text-gray-400 font-medium w-16 shrink-0">Direction</label>
             <div className="grid grid-cols-4 gap-1.5 flex-1">
               {(['horizontal', 'vertical', 'diagonal', 'radial'] as GradientDirection[]).map(dir => (
                 <button
@@ -140,7 +140,7 @@ export function PaddingSettingsPanel({ settings, onChange, onProcess, isProcessi
                   className={`py-1.5 rounded-lg border text-xs font-medium capitalize transition-colors
                     ${settings.gradientDirection === dir
                       ? 'bg-indigo-600 border-indigo-600 text-white'
-                      : 'border-gray-200 text-gray-600 hover:border-indigo-300'}`}
+                      : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-indigo-300'}`}
                 >
                   {dir === 'horizontal' ? '↔' : dir === 'vertical' ? '↕' : dir === 'diagonal' ? '↗' : '◎'}
                 </button>
@@ -148,19 +148,19 @@ export function PaddingSettingsPanel({ settings, onChange, onProcess, isProcessi
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <label className="text-sm text-gray-600 font-medium w-16 shrink-0">Start</label>
+            <label className="text-sm text-gray-600 dark:text-gray-400 font-medium w-16 shrink-0">Start</label>
             <input
               type="color"
               value={settings.gradientColorStart}
               onChange={e => update({ gradientColorStart: e.target.value })}
-              className="h-8 w-12 rounded cursor-pointer border border-gray-200"
+              className="h-8 w-12 rounded cursor-pointer border border-gray-200 dark:border-gray-600"
             />
-            <label className="text-sm text-gray-600 font-medium w-10 shrink-0 text-center">End</label>
+            <label className="text-sm text-gray-600 dark:text-gray-400 font-medium w-10 shrink-0 text-center">End</label>
             <input
               type="color"
               value={settings.gradientColorEnd}
               onChange={e => update({ gradientColorEnd: e.target.value })}
-              className="h-8 w-12 rounded cursor-pointer border border-gray-200"
+              className="h-8 w-12 rounded cursor-pointer border border-gray-200 dark:border-gray-600"
             />
           </div>
         </div>
@@ -170,8 +170,8 @@ export function PaddingSettingsPanel({ settings, onChange, onProcess, isProcessi
       {settings.fillType === 'blur' && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-sm text-gray-600 font-medium">Blur Amount</label>
-            <span className="text-xs text-gray-500 font-mono">{settings.blurAmount}px</span>
+            <label className="text-sm text-gray-600 dark:text-gray-400 font-medium">Blur Amount</label>
+            <span className="text-xs text-gray-500 dark:text-gray-400 font-mono">{settings.blurAmount}px</span>
           </div>
           <input
             type="range"
@@ -187,7 +187,7 @@ export function PaddingSettingsPanel({ settings, onChange, onProcess, isProcessi
 
       {/* Aspect ratio selector */}
       <div className="space-y-2">
-        <label className="text-sm text-gray-600 font-medium">Target Aspect Ratio</label>
+        <label className="text-sm text-gray-600 dark:text-gray-400 font-medium">Target Aspect Ratio</label>
         <div className="grid grid-cols-3 gap-1.5">
           {ASPECT_RATIO_PRESETS.map(preset => (
             <button
@@ -196,7 +196,7 @@ export function PaddingSettingsPanel({ settings, onChange, onProcess, isProcessi
               className={`py-1.5 px-2 rounded-lg border text-xs font-medium transition-colors
                 ${settings.aspectRatio === preset.value
                   ? 'bg-indigo-600 border-indigo-600 text-white'
-                  : 'border-gray-200 text-gray-600 hover:border-indigo-300'}`}
+                  : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-indigo-300'}`}
             >
               {preset.label}
             </button>
@@ -207,14 +207,14 @@ export function PaddingSettingsPanel({ settings, onChange, onProcess, isProcessi
       {/* Custom ratio inputs */}
       {settings.aspectRatio === 'custom' && (
         <div className="flex items-center gap-2">
-          <label className="text-sm text-gray-600 font-medium w-16 shrink-0">Ratio</label>
+          <label className="text-sm text-gray-600 dark:text-gray-400 font-medium w-16 shrink-0">Ratio</label>
           <input
             type="number"
             min={1}
             max={100}
             value={settings.customRatioWidth}
             onChange={e => update({ customRatioWidth: Math.max(1, Number(e.target.value)) })}
-            className="w-16 border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-indigo-300"
+            className="w-16 border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1.5 text-sm text-center bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-300"
           />
           <span className="text-sm text-gray-400 font-bold">:</span>
           <input
@@ -223,17 +223,17 @@ export function PaddingSettingsPanel({ settings, onChange, onProcess, isProcessi
             max={100}
             value={settings.customRatioHeight}
             onChange={e => update({ customRatioHeight: Math.max(1, Number(e.target.value)) })}
-            className="w-16 border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-indigo-300"
+            className="w-16 border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1.5 text-sm text-center bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-300"
           />
-          <span className="text-xs text-gray-400 ml-1">= {(settings.customRatioWidth / settings.customRatioHeight).toFixed(3)}</span>
+          <span className="text-xs text-gray-400 dark:text-gray-500 ml-1">= {(settings.customRatioWidth / settings.customRatioHeight).toFixed(3)}</span>
         </div>
       )}
 
       {/* Border padding */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <label className="text-sm text-gray-600 font-medium">Border Padding</label>
-          <span className="text-xs text-gray-500 font-mono">{settings.borderPadding}px</span>
+          <label className="text-sm text-gray-600 dark:text-gray-400 font-medium">Border Padding</label>
+          <span className="text-xs text-gray-500 dark:text-gray-400 font-mono">{settings.borderPadding}px</span>
         </div>
         <input
           type="range"
@@ -248,7 +248,7 @@ export function PaddingSettingsPanel({ settings, onChange, onProcess, isProcessi
 
       {/* Output format */}
       <div className="space-y-2">
-        <label className="text-sm text-gray-600 font-medium">Output Format</label>
+        <label className="text-sm text-gray-600 dark:text-gray-400 font-medium">Output Format</label>
         <div className="flex gap-2">
           {(['png', 'jpeg', 'webp'] as OutputFormat[]).map(fmt => (
             <button
@@ -257,7 +257,7 @@ export function PaddingSettingsPanel({ settings, onChange, onProcess, isProcessi
               className={`flex-1 py-1.5 rounded-lg border text-xs font-medium uppercase transition-colors
                 ${settings.outputFormat === fmt
                   ? 'bg-indigo-600 border-indigo-600 text-white'
-                  : 'border-gray-200 text-gray-600 hover:border-indigo-300'}`}
+                  : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-indigo-300'}`}
             >
               {fmt}
             </button>
@@ -269,8 +269,8 @@ export function PaddingSettingsPanel({ settings, onChange, onProcess, isProcessi
       {settings.outputFormat !== 'png' && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-sm text-gray-600 font-medium">Quality</label>
-            <span className="text-xs text-gray-500 font-mono">{Math.round(settings.outputQuality * 100)}%</span>
+            <label className="text-sm text-gray-600 dark:text-gray-400 font-medium">Quality</label>
+            <span className="text-xs text-gray-500 dark:text-gray-400 font-mono">{Math.round(settings.outputQuality * 100)}%</span>
           </div>
           <input
             type="range"
@@ -287,8 +287,8 @@ export function PaddingSettingsPanel({ settings, onChange, onProcess, isProcessi
       {/* Max dimension */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <label className="text-sm text-gray-600 font-medium">Max Dimension</label>
-          <span className="text-xs text-gray-500 font-mono">{settings.maxDimension === 0 ? 'None' : `${settings.maxDimension}px`}</span>
+          <label className="text-sm text-gray-600 dark:text-gray-400 font-medium">Max Dimension</label>
+          <span className="text-xs text-gray-500 dark:text-gray-400 font-mono">{settings.maxDimension === 0 ? 'None' : `${settings.maxDimension}px`}</span>
         </div>
         <input
           type="range"
@@ -299,7 +299,7 @@ export function PaddingSettingsPanel({ settings, onChange, onProcess, isProcessi
           onChange={e => update({ maxDimension: Number(e.target.value) })}
           className="w-full accent-indigo-600"
         />
-        <div className="flex justify-between text-xs text-gray-400">
+        <div className="flex justify-between text-xs text-gray-400 dark:text-gray-500">
           <span>No limit</span>
           <span>4000px</span>
         </div>

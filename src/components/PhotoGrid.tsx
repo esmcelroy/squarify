@@ -1,4 +1,5 @@
-import { Download, Trash2, Crown } from 'lucide-react';
+import { useState } from 'react';
+import { Download, Trash2, Crown, Eye, EyeOff } from 'lucide-react';
 import type { UploadedPhoto } from '../types';
 
 interface PhotoGridProps {
@@ -16,24 +17,39 @@ function downloadDataUrl(dataUrl: string, filename: string) {
 }
 
 export function PhotoGrid({ photos, maxAspectRatio, onRemove, isProcessed }: PhotoGridProps) {
+  const [showOriginal, setShowOriginal] = useState<Record<string, boolean>>({});
+
   if (photos.length === 0) return null;
+
+  const togglePreview = (id: string) => {
+    setShowOriginal(prev => ({ ...prev, [id]: !prev[id] }));
+  };
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
       {photos.map((photo, idx) => {
         const isDominant = Math.abs(photo.aspectRatio - maxAspectRatio) < 0.001;
-        const displayUrl = isProcessed && photo.paddedDataUrl ? photo.paddedDataUrl : photo.dataUrl;
+        const viewingOriginal = showOriginal[photo.id] ?? false;
+        const displayUrl = isProcessed && photo.paddedDataUrl && !viewingOriginal
+          ? photo.paddedDataUrl
+          : photo.dataUrl;
         const filename = `squarify-${String(idx + 1).padStart(2, '0')}.png`;
 
         return (
-          <div key={photo.id} className="group relative bg-gray-100 rounded-xl overflow-hidden border border-gray-200 hover:border-indigo-300 transition-colors">
+          <div key={photo.id} className="group relative bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-600 transition-colors">
             {/* Image */}
-            <div className="relative aspect-square flex items-center justify-center overflow-hidden bg-[repeating-conic-gradient(#e5e7eb_0%_25%,#f9fafb_0%_50%)] bg-[length:16px_16px]">
+            <div className="relative aspect-square flex items-center justify-center overflow-hidden bg-[repeating-conic-gradient(#e5e7eb_0%_25%,#f9fafb_0%_50%)] dark:bg-[repeating-conic-gradient(#374151_0%_25%,#1f2937_0%_50%)] bg-[length:16px_16px]">
               <img
                 src={displayUrl}
                 alt={photo.file.name}
                 className="max-w-full max-h-full object-contain"
               />
+              {/* Before/After label */}
+              {isProcessed && photo.paddedDataUrl && (
+                <span className="absolute bottom-2 left-2 text-xs font-medium bg-black/60 text-white px-2 py-0.5 rounded-full">
+                  {viewingOriginal ? 'Original' : 'Padded'}
+                </span>
+              )}
             </div>
 
             {/* Badges */}
@@ -44,21 +60,30 @@ export function PhotoGrid({ photos, maxAspectRatio, onRemove, isProcessed }: Pho
             )}
 
             {/* Info bar */}
-            <div className="px-3 py-2 bg-white border-t border-gray-200">
-              <p className="text-xs text-gray-500 truncate" title={photo.file.name}>{photo.file.name}</p>
-              <p className="text-xs text-gray-400">{photo.width} × {photo.height}</p>
+            <div className="px-3 py-2 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
+              <p className="text-xs text-gray-500 dark:text-gray-400 truncate" title={photo.file.name}>{photo.file.name}</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500">{photo.width} × {photo.height}</p>
             </div>
 
             {/* Action overlay */}
             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
               {isProcessed && photo.paddedDataUrl && (
-                <button
-                  onClick={() => downloadDataUrl(photo.paddedDataUrl!, filename)}
-                  title="Download"
-                  className="p-2 bg-white rounded-full text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors shadow"
-                >
-                  <Download className="w-4 h-4" />
-                </button>
+                <>
+                  <button
+                    onClick={() => togglePreview(photo.id)}
+                    title={viewingOriginal ? 'Show padded' : 'Show original'}
+                    className="p-2 bg-white rounded-full text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors shadow"
+                  >
+                    {viewingOriginal ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                  </button>
+                  <button
+                    onClick={() => downloadDataUrl(photo.paddedDataUrl!, filename)}
+                    title="Download"
+                    className="p-2 bg-white rounded-full text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors shadow"
+                  >
+                    <Download className="w-4 h-4" />
+                  </button>
+                </>
               )}
               <button
                 onClick={() => onRemove(photo.id)}
