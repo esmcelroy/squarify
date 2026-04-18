@@ -1,0 +1,121 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - img [ref=e7]
+      - generic [ref=e11]:
+        - heading "Squarify" [level=1] [ref=e12]
+        - paragraph [ref=e13]: Pad photos to a uniform aspect ratio
+      - generic [ref=e14]:
+        - button "Light theme" [ref=e15]:
+          - img [ref=e16]
+        - button "Dark theme" [ref=e22]:
+          - img [ref=e23]
+        - button "System theme" [pressed] [ref=e25]:
+          - img [ref=e26]
+  - main [ref=e28]:
+    - generic [ref=e29]:
+      - generic [ref=e30]:
+        - button "Drop photos here or click to browse" [active] [ref=e32] [cursor=pointer]:
+          - generic [ref=e33]:
+            - img [ref=e34]
+            - generic [ref=e37]:
+              - paragraph [ref=e38]: Drop photos here or click to browse
+              - paragraph [ref=e39]: JPG, PNG, WebP, GIF, HEIC — up to 20 photos (1/20 added)
+        - generic [ref=e162]:
+          - generic [ref=e163]: "1 photo · Target: Auto (0.950)"
+          - button "Clear all photos" [ref=e164]:
+            - img [ref=e165]
+            - text: Clear all
+        - generic [ref=e169]:
+          - img "hero.png" [ref=e171]
+          - generic [ref=e172]:
+            - img [ref=e173]
+            - text: Widest
+          - generic [ref=e177]:
+            - paragraph [ref=e178]: hero.png
+            - paragraph [ref=e179]: 343 × 361
+          - button "Remove hero.png" [ref=e181]:
+            - img [ref=e182]
+      - generic [ref=e66]:
+        - generic [ref=e67]:
+          - generic [ref=e68]:
+            - heading "Padding Settings" [level=2] [ref=e69]
+            - button "Reset settings" [ref=e70]:
+              - img [ref=e71]
+              - text: Reset
+          - group [ref=e74]:
+            - generic "Fill Type" [ref=e75] [cursor=pointer]:
+              - img [ref=e76]
+              - text: Fill Type
+            - generic [ref=e78]:
+              - generic [ref=e79]:
+                - button "Color" [ref=e80]:
+                  - img [ref=e81]
+                  - text: Color
+                - button "Image" [ref=e87]:
+                  - img [ref=e88]
+                  - text: Image
+                - button "Gradient" [ref=e92]:
+                  - img [ref=e93]
+                  - text: Gradient
+                - button "Blur" [ref=e96]:
+                  - img [ref=e97]
+                  - text: Blur
+                - button "Pattern" [ref=e100]:
+                  - img [ref=e101]
+                  - text: Pattern
+              - generic [ref=e103]:
+                - generic [ref=e104]: Color
+                - generic [ref=e105]:
+                  - textbox "Fill color" [ref=e106] [cursor=pointer]: "#ffffff"
+                  - textbox "Fill color hex" [ref=e107]:
+                    - /placeholder: "#ffffff"
+                    - text: "#ffffff"
+                  - button "Pick color from screen" [ref=e108]:
+                    - img [ref=e109]
+          - group [ref=e113]:
+            - generic "Aspect Ratio" [ref=e114] [cursor=pointer]:
+              - img [ref=e115]
+              - text: Aspect Ratio
+            - generic [ref=e118]:
+              - text: Target Aspect Ratio
+              - generic [ref=e119]:
+                - button "Auto (widest)" [ref=e120]
+                - button "1:1 Square" [ref=e121]
+                - button "4:3" [ref=e122]
+                - button "3:4" [ref=e123]
+                - button "3:2" [ref=e124]
+                - button "2:3" [ref=e125]
+                - button "16:9" [ref=e126]
+                - button "9:16" [ref=e127]
+                - button "Custom" [ref=e128]
+              - generic [ref=e129]:
+                - paragraph [ref=e130]: Social Media Presets
+                - generic [ref=e131]:
+                  - button "IG Post" [ref=e132]
+                  - button "IG Story" [ref=e133]
+                  - button "Facebook" [ref=e134]
+                  - button "X / Twitter" [ref=e135]
+                  - button "LinkedIn" [ref=e136]
+                  - button "YouTube" [ref=e137]
+          - group [ref=e138]:
+            - generic "Output" [ref=e139] [cursor=pointer]:
+              - img [ref=e140]
+              - text: Output
+          - group [ref=e142]:
+            - generic "Effects" [ref=e143] [cursor=pointer]:
+              - img [ref=e144]
+              - text: Effects
+        - button "Process Images" [ref=e148]:
+          - img [ref=e149]
+          - text: Process Images
+  - contentinfo [ref=e152]:
+    - generic [ref=e153]:
+      - paragraph [ref=e154]: Squarify
+      - generic [ref=e155]:
+        - button "About" [ref=e156]:
+          - img [ref=e157]
+          - text: About
+        - link "View source on GitHub" [ref=e159] [cursor=pointer]:
+          - /url: https://github.com/esmcelroy/squarify
+          - img [ref=e160]

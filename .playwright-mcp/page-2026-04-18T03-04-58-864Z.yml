@@ -1,0 +1,112 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - img [ref=e7]
+      - generic [ref=e11]:
+        - heading "Squarify" [level=1] [ref=e12]
+        - paragraph [ref=e13]: Pad photos to a uniform aspect ratio
+      - generic [ref=e14]:
+        - button "Light theme" [ref=e15]:
+          - img [ref=e16]
+        - button "Dark theme" [ref=e22]:
+          - img [ref=e23]
+        - button "System theme" [pressed] [ref=e25]:
+          - img [ref=e26]
+  - main [ref=e28]:
+    - generic [ref=e29]:
+      - button "Drop photos here or click to browse" [ref=e32] [cursor=pointer]:
+        - generic [ref=e33]:
+          - img [ref=e34]
+          - generic [ref=e37]:
+            - paragraph [ref=e38]: Drop photos here or click to browse
+            - paragraph [ref=e39]: JPG, PNG, WebP, GIF, HEIC — up to 20 photos (0/20 added)
+      - generic [ref=e41]:
+        - heading "Padding Settings" [level=2] [ref=e42]
+        - generic [ref=e43]:
+          - button "Color" [ref=e44]:
+            - img [ref=e45]
+            - text: Color
+          - button "Image" [ref=e51]:
+            - img [ref=e52]
+            - text: Image
+          - button "Gradient" [ref=e56]:
+            - img [ref=e57]
+            - text: Gradient
+          - button "Blur" [ref=e60]:
+            - img [ref=e61]
+            - text: Blur
+          - button "Pattern" [ref=e64]:
+            - img [ref=e65]
+            - text: Pattern
+        - generic [ref=e67]:
+          - generic [ref=e68]: Color
+          - generic [ref=e69]:
+            - textbox "Fill color" [ref=e70] [cursor=pointer]: "#ffffff"
+            - textbox "Fill color hex" [ref=e71]:
+              - /placeholder: "#ffffff"
+              - text: "#ffffff"
+            - button "Pick color from screen" [ref=e72]:
+              - img [ref=e73]
+        - generic [ref=e77]:
+          - text: Target Aspect Ratio
+          - generic [ref=e78]:
+            - button "Auto (widest)" [ref=e79]
+            - button "1:1 Square" [ref=e80]
+            - button "4:3" [ref=e81]
+            - button "3:4" [ref=e82]
+            - button "3:2" [ref=e83]
+            - button "2:3" [ref=e84]
+            - button "16:9" [ref=e85]
+            - button "9:16" [ref=e86]
+            - button "Custom" [ref=e87]
+          - generic [ref=e88]:
+            - paragraph [ref=e89]: Social Media Presets
+            - generic [ref=e90]:
+              - button "IG Post" [ref=e91]
+              - button "IG Story" [ref=e92]
+              - button "Facebook" [ref=e93]
+              - button "X / Twitter" [ref=e94]
+              - button "LinkedIn" [ref=e95]
+              - button "YouTube" [ref=e96]
+        - generic [ref=e97]:
+          - generic [ref=e98]:
+            - generic [ref=e99]: Border Padding
+            - generic [ref=e100]: 0px
+          - slider "Border padding" [ref=e101]: "0"
+        - generic [ref=e102]:
+          - text: Output Format
+          - generic [ref=e103]:
+            - button "png" [ref=e104]
+            - button "jpeg" [ref=e105]
+            - button "webp" [ref=e106]
+        - generic [ref=e107]:
+          - generic [ref=e108]:
+            - generic [ref=e109]: Max Dimension
+            - generic [ref=e110]: None
+          - slider "Max dimension" [ref=e111]: "0"
+          - generic [ref=e112]:
+            - generic [ref=e113]: No limit
+            - generic [ref=e114]: 4000px
+        - generic [ref=e116]:
+          - generic [ref=e117]:
+            - img [ref=e118]
+            - text: Watermark
+          - button "Toggle watermark" [ref=e120]
+        - generic [ref=e123]:
+          - generic [ref=e124]:
+            - img [ref=e125]
+            - text: Drop Shadow
+          - button "Toggle drop shadow" [ref=e129]
+        - button "Process Images" [disabled] [ref=e131]:
+          - img [ref=e132]
+          - text: Process Images
+  - contentinfo [ref=e135]:
+    - generic [ref=e136]:
+      - paragraph [ref=e137]: Squarify
+      - generic [ref=e138]:
+        - button "About" [ref=e139]:
+          - img [ref=e140]
+          - text: About
+        - link "View source on GitHub" [ref=e142] [cursor=pointer]:
+          - /url: https://github.com/esmcelroy/squarify
+          - img [ref=e143]

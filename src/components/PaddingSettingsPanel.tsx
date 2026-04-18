@@ -1,14 +1,16 @@
 import React, { useRef } from 'react';
 import type { PaddingSettings, PaddingFillType, GradientDirection, OutputFormat, WatermarkPosition, PatternType } from '../types';
 import { ASPECT_RATIO_PRESETS } from '../types';
-import { Palette, Image as ImageIcon, Wand2, Blend, Sparkles, Type, Layers, Grid3x3, Pipette } from 'lucide-react';
+import { Palette, Image as ImageIcon, Wand2, Blend, Sparkles, Type, Layers, Grid3x3, Pipette, ChevronRight, RotateCcw } from 'lucide-react';
 
 interface PaddingSettingsPanelProps {
   settings: PaddingSettings;
   onChange: (settings: PaddingSettings) => void;
-  onProcess: () => void;
-  isProcessing: boolean;
-  hasPhotos: boolean;
+  defaultSettings?: PaddingSettings;
+  // Optional: when omitted, the process button is not rendered (App.tsx handles it)
+  onProcess?: () => void;
+  isProcessing?: boolean;
+  hasPhotos?: boolean;
 }
 
 const FILL_TYPES: { value: PaddingFillType; label: string; icon: typeof Palette }[] = [
@@ -19,7 +21,7 @@ const FILL_TYPES: { value: PaddingFillType; label: string; icon: typeof Palette 
   { value: 'pattern', label: 'Pattern', icon: Grid3x3 },
 ];
 
-export function PaddingSettingsPanel({ settings, onChange, onProcess, isProcessing, hasPhotos }: PaddingSettingsPanelProps) {
+export function PaddingSettingsPanel({ settings, onChange, defaultSettings, onProcess, isProcessing, hasPhotos }: PaddingSettingsPanelProps) {
   const bgImageInputRef = useRef<HTMLInputElement>(null);
 
   // Ensure watermark and shadow have defaults for backward compatibility
@@ -41,7 +43,28 @@ export function PaddingSettingsPanel({ settings, onChange, onProcess, isProcessi
 
   return (
     <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4 md:p-5 space-y-4 md:space-y-5 md:max-h-[calc(100vh-120px)] overflow-y-auto">
-      <h2 className="font-semibold text-gray-800 dark:text-gray-200 text-base">Padding Settings</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="font-semibold text-gray-800 dark:text-gray-200 text-base">Padding Settings</h2>
+        {defaultSettings && (
+          <button
+            onClick={() => onChange(defaultSettings)}
+            className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+            aria-label="Reset settings"
+            title="Reset to defaults"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            Reset
+          </button>
+        )}
+      </div>
+
+      {/* Fill Type section */}
+      <details open className="group">
+        <summary className="flex items-center gap-2 cursor-pointer select-none text-sm font-medium text-gray-700 dark:text-gray-300 py-1 list-none [&::-webkit-details-marker]:hidden">
+          <ChevronRight className="w-4 h-4 transition-transform group-open:rotate-90 text-gray-400 dark:text-gray-500 shrink-0" />
+          Fill Type
+        </summary>
+        <div className="mt-3 space-y-4">
 
       {/* Fill type selector */}
       <div className="grid grid-cols-5 gap-1 md:gap-1.5">
@@ -269,6 +292,17 @@ export function PaddingSettingsPanel({ settings, onChange, onProcess, isProcessi
         </div>
       )}
 
+        </div>
+      </details>
+
+      {/* Aspect Ratio section */}
+      <details open className="group">
+        <summary className="flex items-center gap-2 cursor-pointer select-none text-sm font-medium text-gray-700 dark:text-gray-300 py-1 list-none [&::-webkit-details-marker]:hidden">
+          <ChevronRight className="w-4 h-4 transition-transform group-open:rotate-90 text-gray-400 dark:text-gray-500 shrink-0" />
+          Aspect Ratio
+        </summary>
+        <div className="mt-3 space-y-4">
+
       {/* Aspect ratio selector */}      <div className="space-y-2">
         <label className="text-sm text-gray-600 dark:text-gray-400 font-medium">Target Aspect Ratio</label>
         <div className="grid grid-cols-3 gap-1.5">
@@ -339,6 +373,17 @@ export function PaddingSettingsPanel({ settings, onChange, onProcess, isProcessi
           <span className="text-xs text-gray-400 dark:text-gray-500 ml-1">= {(settings.customRatioWidth / settings.customRatioHeight).toFixed(3)}</span>
         </div>
       )}
+
+        </div>
+      </details>
+
+      {/* Output section */}
+      <details className="group">
+        <summary className="flex items-center gap-2 cursor-pointer select-none text-sm font-medium text-gray-700 dark:text-gray-300 py-1 list-none [&::-webkit-details-marker]:hidden">
+          <ChevronRight className="w-4 h-4 transition-transform group-open:rotate-90 text-gray-400 dark:text-gray-500 shrink-0" />
+          Output
+        </summary>
+        <div className="mt-3 space-y-4">
 
       {/* Border padding */}
       <div className="space-y-2">
@@ -418,6 +463,17 @@ export function PaddingSettingsPanel({ settings, onChange, onProcess, isProcessi
           <span>4000px</span>
         </div>
       </div>
+
+        </div>
+      </details>
+
+      {/* Effects section */}
+      <details className="group">
+        <summary className="flex items-center gap-2 cursor-pointer select-none text-sm font-medium text-gray-700 dark:text-gray-300 py-1 list-none [&::-webkit-details-marker]:hidden">
+          <ChevronRight className="w-4 h-4 transition-transform group-open:rotate-90 text-gray-400 dark:text-gray-500 shrink-0" />
+          Effects
+        </summary>
+        <div className="mt-3 space-y-4">
 
       {/* Watermark */}
       <div className="space-y-3">
@@ -574,7 +630,11 @@ export function PaddingSettingsPanel({ settings, onChange, onProcess, isProcessi
         )}
       </div>
 
-      {/* Process button */}
+        </div>
+      </details>
+
+      {/* Process button — only rendered when props are provided (backward compat) */}
+      {onProcess && (
       <button
         onClick={onProcess}
         disabled={!hasPhotos || isProcessing}
@@ -592,6 +652,7 @@ export function PaddingSettingsPanel({ settings, onChange, onProcess, isProcessi
           </>
         )}
       </button>
+      )}
     </div>
   );
 }

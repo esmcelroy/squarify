@@ -10,7 +10,7 @@ import type { UploadedPhoto, PaddingSettings } from './types';
 import { ASPECT_RATIO_PRESETS } from './types';
 import { getImageDimensions, findMaxAspectRatio, padImageToAspectRatio } from './lib/imageUtils';
 import { processFilesForHeic } from './lib/heicUtils';
-import { Download, Trash2, Layers, Sun, Moon, Monitor } from 'lucide-react';
+import { Download, Trash2, Layers, Sun, Moon, Monitor, Upload, Sliders, Wand2, ArrowRight } from 'lucide-react';
 
 const DEFAULT_SETTINGS: PaddingSettings = {
   fillType: 'color',
@@ -67,6 +67,7 @@ export default function App() {
   const [isProcessed, setIsProcessed] = useState(false);
   const [progress, setProgress] = useState(0);
   const [theme, setTheme] = useDarkMode();
+  const [settingsChangedSinceProcess, setSettingsChangedSinceProcess] = useState(false);
 
   const THEME_OPTIONS: { value: Theme; icon: typeof Sun; label: string }[] = [
     { value: 'light', icon: Sun, label: 'Light' },
@@ -115,6 +116,7 @@ export default function App() {
     if (photos.length === 0) return;
     setIsProcessing(true);
     setProgress(0);
+    setSettingsChangedSinceProcess(false);
 
     // Determine target aspect ratio
     let target: number;
@@ -196,6 +198,33 @@ export default function App() {
           <div className="space-y-4">
             <PhotoUpload onPhotosAdded={handlePhotosAdded} currentCount={photos.length} />
 
+            {/* Empty state */}
+            {photos.length === 0 && (
+              <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-5">
+                <div className="flex items-center justify-center gap-3 text-gray-400 dark:text-gray-500">
+                  <div className="flex flex-col items-center gap-1">
+                    <Upload className="w-5 h-5" />
+                    <span className="text-[10px] font-medium">Upload</span>
+                  </div>
+                  <ArrowRight className="w-3.5 h-3.5 shrink-0" />
+                  <div className="flex flex-col items-center gap-1">
+                    <Sliders className="w-5 h-5" />
+                    <span className="text-[10px] font-medium">Configure</span>
+                  </div>
+                  <ArrowRight className="w-3.5 h-3.5 shrink-0" />
+                  <div className="flex flex-col items-center gap-1">
+                    <Wand2 className="w-5 h-5" />
+                    <span className="text-[10px] font-medium">Process</span>
+                  </div>
+                  <ArrowRight className="w-3.5 h-3.5 shrink-0" />
+                  <div className="flex flex-col items-center gap-1">
+                    <Download className="w-5 h-5" />
+                    <span className="text-[10px] font-medium">Download</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Stats bar */}
             {photos.length > 0 && (
               <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-2">
@@ -246,14 +275,43 @@ export default function App() {
           </div>
 
           {/* Right column: Settings */}
-          <div className="md:sticky md:top-4">
+          <div className="md:sticky md:top-4 flex flex-col">
             <PaddingSettingsPanel
               settings={settings}
-              onChange={s => { setSettings(s); setIsProcessed(false); }}
-              onProcess={handleProcess}
-              isProcessing={isProcessing}
-              hasPhotos={photos.length > 0}
+              defaultSettings={DEFAULT_SETTINGS}
+              onChange={s => {
+                setSettings(s);
+                if (isProcessed) setSettingsChangedSinceProcess(true);
+                setIsProcessed(false);
+              }}
             />
+            {/* Sticky Process button */}
+            <div className="sticky bottom-0 pt-3 pb-1 bg-gray-50 dark:bg-gray-950">
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.2)]">
+                <button
+                  onClick={handleProcess}
+                  disabled={photos.length === 0 || isProcessing}
+                  className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium py-2.5 rounded-lg transition-colors text-sm"
+                >
+                  {isProcessing ? (
+                    <>
+                      <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Processing…
+                    </>
+                  ) : (
+                    <>
+                      <Wand2 className="w-4 h-4" />
+                      Process Images
+                    </>
+                  )}
+                </button>
+                {settingsChangedSinceProcess && (
+                  <p className="text-xs text-amber-600 dark:text-amber-400 text-center mt-2">
+                    Settings changed — re-process to apply
+                  </p>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </main>
