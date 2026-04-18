@@ -10,5 +10,23 @@ export default defineConfig({
     setupFiles: ['./src/__tests__/setup.ts'],
     include: ['src/**/*.test.{ts,tsx}'],
     exclude: ['e2e/**', 'node_modules/**'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json-summary', 'html'],
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: [
+        'src/__tests__/**',
+        'src/main.tsx',
+        'src/vite-env.d.ts',
+        'src/libheif-js.d.ts',
+      ],
+      thresholds: {
+        // Goal: 80% — raise as coverage improves
+        lines: 20,
+        branches: 40,
+        functions: 20,
+        statements: 20,
+      },
+    },
   },
 })

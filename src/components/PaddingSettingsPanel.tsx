@@ -60,12 +60,14 @@ export function PaddingSettingsPanel({ settings, onChange, onProcess, isProcessi
           <div className="flex items-center gap-2 flex-1">
             <input
               type="color"
+              aria-label="Fill color"
               value={settings.fillColor}
               onChange={e => update({ fillColor: e.target.value })}
               className="h-9 w-14 rounded cursor-pointer border border-gray-200 dark:border-gray-600"
             />
             <input
               type="text"
+              aria-label="Fill color hex"
               value={settings.fillColor}
               onChange={e => {
                 const val = e.target.value;
@@ -102,6 +104,7 @@ export function PaddingSettingsPanel({ settings, onChange, onProcess, isProcessi
                 ref={bgImageInputRef}
                 type="file"
                 accept="image/*"
+                aria-label="Upload background image"
                 className="hidden"
                 onChange={handleBgImageFile}
               />
@@ -151,6 +154,7 @@ export function PaddingSettingsPanel({ settings, onChange, onProcess, isProcessi
             <label className="text-sm text-gray-600 dark:text-gray-400 font-medium w-16 shrink-0">Start</label>
             <input
               type="color"
+              aria-label="Gradient start color"
               value={settings.gradientColorStart}
               onChange={e => update({ gradientColorStart: e.target.value })}
               className="h-8 w-12 rounded cursor-pointer border border-gray-200 dark:border-gray-600"
@@ -158,6 +162,7 @@ export function PaddingSettingsPanel({ settings, onChange, onProcess, isProcessi
             <label className="text-sm text-gray-600 dark:text-gray-400 font-medium w-10 shrink-0 text-center">End</label>
             <input
               type="color"
+              aria-label="Gradient end color"
               value={settings.gradientColorEnd}
               onChange={e => update({ gradientColorEnd: e.target.value })}
               className="h-8 w-12 rounded cursor-pointer border border-gray-200 dark:border-gray-600"
@@ -175,6 +180,7 @@ export function PaddingSettingsPanel({ settings, onChange, onProcess, isProcessi
           </div>
           <input
             type="range"
+            aria-label="Blur amount"
             min={5}
             max={100}
             step={5}
@@ -210,6 +216,7 @@ export function PaddingSettingsPanel({ settings, onChange, onProcess, isProcessi
           <label className="text-sm text-gray-600 dark:text-gray-400 font-medium w-16 shrink-0">Ratio</label>
           <input
             type="number"
+            aria-label="Custom ratio width"
             min={1}
             max={100}
             value={settings.customRatioWidth}
@@ -219,6 +226,7 @@ export function PaddingSettingsPanel({ settings, onChange, onProcess, isProcessi
           <span className="text-sm text-gray-400 font-bold">:</span>
           <input
             type="number"
+            aria-label="Custom ratio height"
             min={1}
             max={100}
             value={settings.customRatioHeight}
@@ -237,6 +245,7 @@ export function PaddingSettingsPanel({ settings, onChange, onProcess, isProcessi
         </div>
         <input
           type="range"
+          aria-label="Border padding"
           min={0}
           max={200}
           step={5}
@@ -274,6 +283,7 @@ export function PaddingSettingsPanel({ settings, onChange, onProcess, isProcessi
           </div>
           <input
             type="range"
+            aria-label="Output quality"
             min={0.1}
             max={1}
             step={0.05}
@@ -292,6 +302,7 @@ export function PaddingSettingsPanel({ settings, onChange, onProcess, isProcessi
         </div>
         <input
           type="range"
+          aria-label="Max dimension"
           min={0}
           max={4000}
           step={100}

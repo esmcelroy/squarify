@@ -84,6 +84,7 @@ export function PhotoUpload({ onPhotosAdded, currentCount }: PhotoUploadProps) {
           ref={inputRef}
           type="file"
           multiple
+          aria-label="Upload photos"
           accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,.heic,.heif"
           className="hidden"
           onChange={onInputChange}
