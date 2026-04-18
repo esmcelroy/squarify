@@ -189,8 +189,8 @@ export default function App() {
       </header>
 
       <main className="max-w-6xl mx-auto px-4 py-6 space-y-6">
-        {/* Upload + Settings */}
         <div className="grid grid-cols-1 md:grid-cols-[1fr_320px] gap-6 items-start">
+          {/* Left column: Upload, Preview, Grid */}
           <div className="space-y-4">
             <PhotoUpload onPhotosAdded={handlePhotosAdded} currentCount={photos.length} />
 
@@ -203,54 +203,57 @@ export default function App() {
                 </button>
               </div>
             )}
+
+            {/* Progress */}
+            {isProcessing && (
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400">
+                  <span>Processing images…</span>
+                  <span>{progress}%</span>
+                </div>
+                <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-indigo-500 rounded-full transition-all duration-200"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Download all */}
+            {isProcessed && photos.some(p => p.paddedDataUrl) && (
+              <div className="flex justify-end">
+                <button
+                  onClick={handleDownloadAll}
+                  className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-5 rounded-lg text-sm transition-colors"
+                >
+                  <Download className="w-4 h-4" />
+                  Download All as ZIP
+                </button>
+              </div>
+            )}
+
+            {/* Photo grid */}
+            <PhotoGrid
+              photos={photos}
+              maxAspectRatio={maxAspectRatio}
+              onRemove={handleRemove}
+              isProcessed={isProcessed}
+              outputFormat={settings.outputFormat}
+            />
           </div>
 
-          <PaddingSettingsPanel
-            settings={settings}
-            onChange={s => { setSettings(s); setIsProcessed(false); }}
-            onProcess={handleProcess}
-            isProcessing={isProcessing}
-            hasPhotos={photos.length > 0}
-          />
+          {/* Right column: Settings */}
+          <div className="md:sticky md:top-4">
+            <PaddingSettingsPanel
+              settings={settings}
+              onChange={s => { setSettings(s); setIsProcessed(false); }}
+              onProcess={handleProcess}
+              isProcessing={isProcessing}
+              hasPhotos={photos.length > 0}
+            />
+          </div>
         </div>
-
-        {/* Progress */}
-        {isProcessing && (
-          <div className="space-y-2">
-            <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400">
-              <span>Processing images…</span>
-              <span>{progress}%</span>
-            </div>
-            <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-indigo-500 rounded-full transition-all duration-200"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Download all */}
-        {isProcessed && photos.some(p => p.paddedDataUrl) && (
-          <div className="flex justify-end">
-            <button
-              onClick={handleDownloadAll}
-              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-5 rounded-lg text-sm transition-colors"
-            >
-              <Download className="w-4 h-4" />
-              Download All as ZIP
-            </button>
-          </div>
-        )}
-
-        {/* Photo grid */}
-        <PhotoGrid
-          photos={photos}
-          maxAspectRatio={maxAspectRatio}
-          onRemove={handleRemove}
-          isProcessed={isProcessed}
-          outputFormat={settings.outputFormat}
-        />
       </main>
 
       <AppFooter />
