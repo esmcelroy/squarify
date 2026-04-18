@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
 import type { PaddingSettings } from '../types';
+import { ASPECT_RATIO_PRESETS } from '../types';
 import { Palette, Image as ImageIcon, Wand2 } from 'lucide-react';
 
 interface PaddingSettingsPanelProps {
@@ -124,6 +125,46 @@ export function PaddingSettingsPanel({ settings, onChange, onProcess, isProcessi
           </div>
         </div>
       )}
+
+      {/* Aspect ratio selector */}
+      <div className="space-y-2">
+        <label className="text-sm text-gray-600 font-medium">Target Aspect Ratio</label>
+        <div className="grid grid-cols-2 gap-1.5">
+          {ASPECT_RATIO_PRESETS.map(preset => (
+            <button
+              key={preset.value}
+              onClick={() => update({ aspectRatio: preset.value })}
+              className={`py-1.5 px-2 rounded-lg border text-xs font-medium transition-colors
+                ${settings.aspectRatio === preset.value
+                  ? 'bg-indigo-600 border-indigo-600 text-white'
+                  : 'border-gray-200 text-gray-600 hover:border-indigo-300'}`}
+            >
+              {preset.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Border padding */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <label className="text-sm text-gray-600 font-medium">Border Padding</label>
+          <span className="text-xs text-gray-500 font-mono">{settings.borderPadding}px</span>
+        </div>
+        <input
+          type="range"
+          min={0}
+          max={200}
+          step={5}
+          value={settings.borderPadding}
+          onChange={e => update({ borderPadding: Number(e.target.value) })}
+          className="w-full accent-indigo-600"
+        />
+        <div className="flex justify-between text-xs text-gray-400">
+          <span>0</span>
+          <span>200px</span>
+        </div>
+      </div>
 
       {/* Process button */}
       <button

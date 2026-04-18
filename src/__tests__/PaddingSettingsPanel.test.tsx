@@ -9,6 +9,8 @@ const defaultSettings: PaddingSettings = {
   fillColor: '#ffffff',
   fillImageDataUrl: null,
   fillImageStyle: 'cover',
+  aspectRatio: 'auto',
+  borderPadding: 0,
 };
 
 function renderPanel(overrides: Partial<Parameters<typeof PaddingSettingsPanel>[0]> = {}) {

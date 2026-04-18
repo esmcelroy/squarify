@@ -19,22 +19,32 @@ export async function padImageToAspectRatio(
   targetAspectRatio: number,
   settings: PaddingSettings
 ): Promise<string> {
-  if (Math.abs(photo.aspectRatio - targetAspectRatio) < 0.001) {
+  const border = settings.borderPadding || 0;
+  const needsRatioPadding = Math.abs(photo.aspectRatio - targetAspectRatio) >= 0.001;
+
+  if (!needsRatioPadding && border === 0) {
     return photo.dataUrl;
   }
 
-  const canvas = document.createElement('canvas');
   let canvasWidth: number;
   let canvasHeight: number;
 
   if (photo.aspectRatio < targetAspectRatio) {
     canvasHeight = photo.height;
     canvasWidth = Math.round(photo.height * targetAspectRatio);
-  } else {
+  } else if (photo.aspectRatio > targetAspectRatio) {
     canvasWidth = photo.width;
     canvasHeight = Math.round(photo.width / targetAspectRatio);
+  } else {
+    canvasWidth = photo.width;
+    canvasHeight = photo.height;
   }
 
+  // Add border padding
+  canvasWidth += border * 2;
+  canvasHeight += border * 2;
+
+  const canvas = document.createElement('canvas');
   canvas.width = canvasWidth;
   canvas.height = canvasHeight;
 

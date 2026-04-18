@@ -5,6 +5,7 @@ import { PaddingSettingsPanel } from './components/PaddingSettingsPanel';
 import { PhotoGrid } from './components/PhotoGrid';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import type { UploadedPhoto, PaddingSettings } from './types';
+import { ASPECT_RATIO_PRESETS } from './types';
 import { getImageDimensions, findMaxAspectRatio, padImageToAspectRatio } from './lib/imageUtils';
 import { processFilesForHeic } from './lib/heicUtils';
 import { Download, Trash2, Layers } from 'lucide-react';
@@ -14,6 +15,8 @@ const DEFAULT_SETTINGS: PaddingSettings = {
   fillColor: '#ffffff',
   fillImageDataUrl: null,
   fillImageStyle: 'cover',
+  aspectRatio: 'auto',
+  borderPadding: 0,
 };
 
 function readFileAsDataUrl(file: File): Promise<string> {
@@ -73,7 +76,11 @@ export default function App() {
     if (photos.length === 0) return;
     setIsProcessing(true);
     setProgress(0);
-    const target = findMaxAspectRatio(photos);
+
+    // Determine target aspect ratio
+    const preset = ASPECT_RATIO_PRESETS.find(p => p.value === settings.aspectRatio);
+    const target = preset?.ratio ?? findMaxAspectRatio(photos);
+
     const processed: UploadedPhoto[] = [];
     for (let i = 0; i < photos.length; i++) {
       const paddedDataUrl = await padImageToAspectRatio(photos[i], target, settings);
@@ -128,7 +135,7 @@ export default function App() {
             {/* Stats bar */}
             {photos.length > 0 && (
               <div className="flex items-center justify-between text-sm text-gray-600 bg-white border border-gray-200 rounded-lg px-4 py-2">
-                <span>{photos.length} photo{photos.length !== 1 ? 's' : ''} · Max ratio: <span className="font-mono font-medium">{maxAspectRatio.toFixed(3)}</span></span>
+                <span>{photos.length} photo{photos.length !== 1 ? 's' : ''} · Target: <span className="font-mono font-medium">{settings.aspectRatio === 'auto' ? `Auto (${maxAspectRatio.toFixed(3)})` : settings.aspectRatio}</span>{settings.borderPadding > 0 && ` · Border: ${settings.borderPadding}px`}</span>
                 <button onClick={handleClearAll} className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 transition-colors">
                   <Trash2 className="w-3 h-3" /> Clear all
                 </button>
