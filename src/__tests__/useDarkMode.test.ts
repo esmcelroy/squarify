@@ -34,12 +34,12 @@ describe('useDarkMode', () => {
       mockListeners.push(...listeners);
       // Keep reference so listeners added later are captured
       const origAddEventListener = mql.addEventListener as ReturnType<typeof vi.fn>;
-      (mql as any).addEventListener = vi.fn((_event: string, handler: (e: { matches: boolean }) => void) => {
+      (mql as unknown as Record<string, unknown>).addEventListener = vi.fn((_event: string, handler: (e: { matches: boolean }) => void) => {
         mockListeners.push(handler);
         origAddEventListener(_event, handler);
       });
       return mql;
-    }) as any;
+    }) as unknown as typeof window.matchMedia;
   });
 
   afterEach(() => {
@@ -104,7 +104,7 @@ describe('useDarkMode', () => {
     window.matchMedia = vi.fn(() => {
       const { mql } = createMatchMedia(true);
       return mql;
-    }) as any;
+    }) as unknown as typeof window.matchMedia;
     const { result } = renderHook(() => useDarkMode());
     expect(result.current[0]).toBe('system');
     expect(result.current[2]).toBe(true);

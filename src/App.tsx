@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import JSZip from 'jszip';
 import { PhotoUpload } from './components/PhotoUpload';
 import { PaddingSettingsPanel } from './components/PaddingSettingsPanel';
@@ -67,7 +67,12 @@ export default function App() {
   const [isProcessed, setIsProcessed] = useState(false);
   const [progress, setProgress] = useState(0);
   const [theme, setTheme] = useDarkMode();
-  const [settingsChangedSinceProcess, setSettingsChangedSinceProcess] = useState(false);
+
+  // Ref that always holds the latest handleProcess so the debounce timer
+  // never captures a stale closure.
+  const handleProcessRef = useRef<() => void>(() => {});
+  const autoProcessTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const isInitialMountRef = useRef(true);
 
   const THEME_OPTIONS: { value: Theme; icon: typeof Sun; label: string }[] = [
     { value: 'light', icon: Sun, label: 'Light' },
@@ -116,7 +121,6 @@ export default function App() {
     if (photos.length === 0) return;
     setIsProcessing(true);
     setProgress(0);
-    setSettingsChangedSinceProcess(false);
 
     // Determine target aspect ratio
     let target: number;
@@ -137,6 +141,26 @@ export default function App() {
     setIsProcessing(false);
     setIsProcessed(true);
   };
+
+  // Keep the ref pointing at the latest handleProcess so the debounce
+  // timer always calls the version that closes over fresh state.
+  useEffect(() => {
+    handleProcessRef.current = handleProcess;
+  });
+
+  // Auto-process when settings change (debounced), provided photos are loaded.
+  // photos.length is intentionally omitted from deps to avoid triggering on
+  // photo additions/removals; handleProcess already guards against empty photos.
+  useEffect(() => {
+    if (isInitialMountRef.current) {
+      isInitialMountRef.current = false;
+      return;
+    }
+    if (photos.length === 0) return;
+    clearTimeout(autoProcessTimerRef.current);
+    autoProcessTimerRef.current = setTimeout(() => handleProcessRef.current(), 400);
+    return () => clearTimeout(autoProcessTimerRef.current);
+  }, [settings]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleDownloadAll = async () => {
     const processedPhotos = photos.filter(p => p.paddedDataUrl);
@@ -281,7 +305,6 @@ export default function App() {
               defaultSettings={DEFAULT_SETTINGS}
               onChange={s => {
                 setSettings(s);
-                if (isProcessed) setSettingsChangedSinceProcess(true);
                 setIsProcessed(false);
               }}
             />
@@ -305,11 +328,6 @@ export default function App() {
                     </>
                   )}
                 </button>
-                {settingsChangedSinceProcess && (
-                  <p className="text-xs text-amber-600 dark:text-amber-400 text-center mt-2">
-                    Settings changed — re-process to apply
-                  </p>
-                )}
               </div>
             </div>
           </div>

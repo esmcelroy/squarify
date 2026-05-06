@@ -39,7 +39,7 @@ describe('App', () => {
       addListener: vi.fn(),
       removeListener: vi.fn(),
       dispatchEvent: vi.fn(),
-    })) as any;
+    })) as unknown as MediaQueryList;
   });
 
   afterEach(() => {
@@ -114,7 +114,7 @@ describe('App', () => {
         setTimeout(() => this.onload?.(), 0);
       }
     }
-    global.FileReader = MockFileReader as any;
+    global.FileReader = MockFileReader as unknown as typeof FileReader;
 
     return {
       restore: () => { global.FileReader = origFileReader; },
@@ -204,4 +204,60 @@ describe('App', () => {
 
     restore();
   });
+
+  // --- Auto-process on settings change ---
+  it('does not show "Settings changed" warning (auto-process replaces it)', async () => {
+    const user = userEvent.setup();
+    const mockFile = await setupMocksAndUpload();
+    const { padImageToAspectRatio } = await import('../lib/imageUtils');
+    (padImageToAspectRatio as ReturnType<typeof vi.fn>).mockResolvedValue('data:image/png;base64,padded');
+    const { restore } = setupUploadMocks();
+
+    render(<App />);
+
+    // Upload and process
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [mockFile] } });
+    await waitFor(() => expect(screen.getByText(/1 photo/)).toBeInTheDocument());
+    await user.click(screen.getByText('Process Images').closest('button')!);
+    await waitFor(() => expect(screen.getByText('Download All as ZIP')).toBeInTheDocument());
+
+    // Change a setting – the old warning must never appear
+    const resetButton = screen.getByTitle('Reset to defaults');
+    await user.click(resetButton);
+    expect(screen.queryByText(/re-process to apply/i)).not.toBeInTheDocument();
+
+    restore();
+  });
+
+  it('auto-processes after a settings change when photos are loaded', async () => {
+    const user = userEvent.setup();
+    const mockFile = await setupMocksAndUpload();
+    const { padImageToAspectRatio } = await import('../lib/imageUtils');
+    (padImageToAspectRatio as ReturnType<typeof vi.fn>).mockResolvedValue('data:image/png;base64,padded');
+    const { restore } = setupUploadMocks();
+
+    render(<App />);
+
+    // Upload and do the initial manual process
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [mockFile] } });
+    await waitFor(() => expect(screen.getByText(/1 photo/)).toBeInTheDocument());
+    await user.click(screen.getByText('Process Images').closest('button')!);
+    await waitFor(() => expect(screen.getByText('Download All as ZIP')).toBeInTheDocument());
+
+    // Simulate a settings change by switching the output format (JPEG ≠ default PNG)
+    await user.click(screen.getByRole('button', { name: 'jpeg' }));
+
+    // Download All disappears immediately (isProcessed reset to false)
+    expect(screen.queryByText('Download All as ZIP')).not.toBeInTheDocument();
+
+    // After the debounce fires, auto-process re-runs and Download All reappears
+    await waitFor(
+      () => expect(screen.getByText('Download All as ZIP')).toBeInTheDocument(),
+      { timeout: 3000 },
+    );
+
+    restore();
+  }, 5000);
 });

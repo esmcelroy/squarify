@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { findMaxAspectRatio, getImageDimensions, padImageToAspectRatio, drawPatternFill, drawWatermark, getWatermarkPosition } from '../lib/imageUtils'
-import type { UploadedPhoto, PaddingSettings, PatternSettings, WatermarkSettings, WatermarkPosition } from '../types'
+import type { UploadedPhoto, PaddingSettings, PatternSettings, WatermarkSettings } from '../types'
 
 function makePhoto(width: number, height: number, overrides?: Partial<UploadedPhoto>): UploadedPhoto {
   return {
@@ -92,7 +92,7 @@ function installCanvasMocks() {
 
   HTMLCanvasElement.prototype.getContext = vi.fn(() => mockCtx) as unknown as typeof HTMLCanvasElement.prototype.getContext
   HTMLCanvasElement.prototype.toDataURL = vi.fn(
-    (type?: string, _quality?: unknown) => `data:${type ?? 'image/png'};base64,MOCK`
+    (type?: string) => `data:${type ?? 'image/png'};base64,MOCK`
   )
 }
 
@@ -108,13 +108,12 @@ function installImageMock(naturalWidth = 800, naturalHeight = 600) {
     onerror: ((err: unknown) => void) | null = null
 
     constructor() {
-      const self = this
       // Auto-fire onload on next microtask after src is set
       Object.defineProperty(this, 'src', {
-        get: () => self._src,
-        set(value: string) {
-          self._src = value
-          queueMicrotask(() => self.onload?.())
+        get: () => this._src,
+        set: (value: string) => {
+          this._src = value
+          queueMicrotask(() => this.onload?.())
         },
       })
     }
@@ -288,7 +287,7 @@ describe('padImageToAspectRatio', () => {
   it('outputs webp format with quality', async () => {
     const photo = makePhoto(600, 600, { dataUrl: 'data:img' })
     const settings = defaultSettings({ outputFormat: 'webp', outputQuality: 0.9 })
-    const result = await padImageToAspectRatio(photo, 2, settings)
+    await padImageToAspectRatio(photo, 2, settings)
 
     expect(HTMLCanvasElement.prototype.toDataURL).toHaveBeenCalledWith('image/webp', 0.9)
   })
@@ -296,7 +295,7 @@ describe('padImageToAspectRatio', () => {
   it('outputs png format without quality parameter', async () => {
     const photo = makePhoto(600, 600, { dataUrl: 'data:img' })
     const settings = defaultSettings({ outputFormat: 'png' })
-    const result = await padImageToAspectRatio(photo, 2, settings)
+    await padImageToAspectRatio(photo, 2, settings)
 
     expect(HTMLCanvasElement.prototype.toDataURL).toHaveBeenCalledWith('image/png', undefined)
   })
