@@ -39,7 +39,7 @@ describe('App', () => {
       addListener: vi.fn(),
       removeListener: vi.fn(),
       dispatchEvent: vi.fn(),
-    })) as any;
+    })) as unknown as MediaQueryList;
   });
 
   afterEach(() => {
@@ -114,7 +114,7 @@ describe('App', () => {
         setTimeout(() => this.onload?.(), 0);
       }
     }
-    global.FileReader = MockFileReader as any;
+    global.FileReader = MockFileReader as unknown as typeof FileReader;
 
     return {
       restore: () => { global.FileReader = origFileReader; },

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { PhotoGrid } from '../components/PhotoGrid';
 import type { UploadedPhoto } from '../types';
@@ -70,7 +70,7 @@ describe('PhotoGrid', () => {
     const clickSpy = vi.fn()
     const createElementSpy = vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
       if (tag === 'a') {
-        return { href: '', download: '', click: clickSpy } as any
+        return { href: '', download: '', click: clickSpy } as unknown as HTMLAnchorElement
       }
       return originalCreateElement(tag)
     })
@@ -116,13 +116,13 @@ describe('PhotoGrid', () => {
     })
     globalThis.ClipboardItem = class {
       constructor(public items: Record<string, Blob>) {}
-    } as any
+    } as unknown as typeof ClipboardItem
 
     const pngBlob = new Blob(['px'], { type: 'image/png' })
     const mockFetch = vi.fn().mockResolvedValue({
       blob: () => Promise.resolve(pngBlob),
     })
-    window.fetch = mockFetch as any
+    window.fetch = mockFetch as unknown as typeof fetch
 
     const photos = [
       makePhoto({ id: 'p1', paddedDataUrl: 'data:image/png;base64,padded' }),
@@ -160,7 +160,7 @@ describe('PhotoGrid', () => {
           set(v: string) { downloadFilename = v },
           get() { return downloadFilename },
         })
-        return anchor as any
+        return anchor as unknown as HTMLAnchorElement
       }
       return originalCreateElement(tag)
     })
@@ -187,7 +187,7 @@ describe('PhotoGrid', () => {
           set(v: string) { downloadFilename = v },
           get() { return downloadFilename },
         })
-        return anchor as any
+        return anchor as unknown as HTMLAnchorElement
       }
       return originalCreateElement(tag)
     })

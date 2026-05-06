@@ -1,5 +1,4 @@
 import { test, expect } from '@playwright/test'
-import { createLandscapePng, uploadTestImage } from './test-helpers'
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/')

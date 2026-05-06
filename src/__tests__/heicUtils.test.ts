@@ -117,7 +117,7 @@ describe('convertHeicToJpeg', () => {
     }])
     const mockCanvas = makeMockCanvas()
     createElementSpy = vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
-      if (tag === 'canvas') return mockCanvas as any
+      if (tag === 'canvas') return mockCanvas as unknown as HTMLCanvasElement
       return originalCreateElement(tag)
     })
   })
@@ -150,7 +150,7 @@ describe('convertHeicToJpeg', () => {
     createElementSpy.mockRestore()
     const mockCanvas = makeMockCanvas(null)
     createElementSpy = vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
-      if (tag === 'canvas') return mockCanvas as any
+      if (tag === 'canvas') return mockCanvas as unknown as HTMLCanvasElement
       return originalCreateElement(tag)
     })
 
@@ -173,7 +173,7 @@ describe('processFilesForHeic', () => {
     }])
     const mockCanvas = makeMockCanvas()
     createElementSpy = vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
-      if (tag === 'canvas') return mockCanvas as any
+      if (tag === 'canvas') return mockCanvas as unknown as HTMLCanvasElement
       return originalCreateElement(tag)
     })
   })
